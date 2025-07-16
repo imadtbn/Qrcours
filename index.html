@@ -8,11 +8,47 @@
   <style>
     body {
       font-family: 'Cairo', sans-serif;
+      background-color: #f4f4f4;
+      color: #222;
       text-align: center;
+      padding: 20px;
     }
+
+    h1 {
+      color: #006233;
+    }
+
     #reader {
       width: 100%;
-      height: 100%;
+      max-width: 400px;
+      margin: auto;
+      margin-top: 20px;
+      border: 2px solid #006233;
+      border-radius: 8px;
+    }
+
+    #result-container {
+      margin-top: 20px;
+      padding: 15px;
+      background: #e1f5e1;
+      border: 1px solid #006233;
+      border-radius: 10px;
+      display: none;
+    }
+
+    button {
+      background-color: #006233;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      margin: 10px 5px;
+      border-radius: 6px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #004d26;
     }
   </style>
 </head>
@@ -20,24 +56,71 @@
   <h1>مسح QR</h1>
   <div id="reader"></div>
 
+  <div id="result-container">
+    <h3>نتيجة المسح:</h3>
+    <p id="result-text"></p>
+    <button onclick="copyToClipboard()">📋 نسخ</button>
+    <button onclick="saveToDatabase()">💾 حفظ</button>
+    <button onclick="restartScanner()">🔄 إعادة المسح</button>
+  </div>
+
   <script>
+    let html5QrcodeScanner;
+    let lastResult = "";
+
     function onScanSuccess(qrCodeMessage) {
-      alert("تم مسح الكود بنجاح: " + qrCodeMessage);
+      if (qrCodeMessage !== lastResult) {
+        lastResult = qrCodeMessage;
+        document.getElementById("result-text").innerText = qrCodeMessage;
+        document.getElementById("result-container").style.display = "block";
+        html5QrcodeScanner.clear();
+      }
     }
 
     function onScanError(errorMessage) {
-      console.warn(errorMessage);
+      // تجاهل الأخطاء المتكررة
     }
 
-    const config = {
-      fps: 10,
-      qrbox: 250,
-      facingMode: "environment" // استخدام الكاميرا الخلفية بشكل افتراضي
-    };
+    function copyToClipboard() {
+      const text = document.getElementById("result-text").innerText;
+      navigator.clipboard.writeText(text);
+      alert("📋 تم نسخ النص!");
+    }
 
-    let html5QrcodeScanner = new Html5QrcodeScanner(
-      "reader", config);
-    html5QrcodeScanner.render(onScanSuccess, onScanError);
+    function saveToDatabase() {
+      const data = {
+        content: document.getElementById("result-text").innerText,
+        timestamp: new Date().toISOString()
+      };
+      console.log("🔁 حفظ في قاعدة البيانات:", data);
+      alert("✅ تم حفظ البيانات مؤقتاً (التخزين الحقيقي يتطلب ربط بقاعدة بيانات).");
+    }
+
+    function restartScanner() {
+      document.getElementById("result-container").style.display = "none";
+      startScanner();
+    }
+
+    function startScanner() {
+      const config = {
+        fps: 10,
+        qrbox: 250,
+        facingMode: { exact: "user" } // استخدام الكاميرا الأمامية
+      };
+
+      html5QrcodeScanner = new Html5Qrcode("reader");
+      html5QrcodeScanner.start(
+        config.facingMode,
+        config,
+        onScanSuccess,
+        onScanError
+      ).catch(err => {
+        alert("حدث خطأ عند محاولة فتح الكاميرا: " + err);
+      });
+    }
+
+    // بدء المسح عند تحميل الصفحة
+    window.onload = startScanner;
   </script>
 </body>
 </html>

@@ -25,6 +25,7 @@
       margin-top: 20px;
       border: 2px solid #006233;
       border-radius: 8px;
+      display: none;
     }
 
     #result-container {
@@ -50,10 +51,20 @@
     button:hover {
       background-color: #004d26;
     }
+
+    #control-buttons {
+      margin-top: 20px;
+    }
   </style>
 </head>
 <body>
   <h1>مسح QR</h1>
+
+  <div id="control-buttons">
+    <button onclick="startScanner()">📷 فتح الكاميرا</button>
+    <button onclick="switchCamera()">🔄 تبديل الكاميرا</button>
+  </div>
+
   <div id="reader"></div>
 
   <div id="result-container">
@@ -67,6 +78,8 @@
   <script>
     let html5QrcodeScanner;
     let lastResult = "";
+    let currentCameraIndex = 0;
+    let cameras = [];
 
     function onScanSuccess(qrCodeMessage) {
       if (qrCodeMessage !== lastResult) {
@@ -98,31 +111,56 @@
 
     function restartScanner() {
       document.getElementById("result-container").style.display = "none";
-      startScanner(); // إعادة التشغيل
+      startScanner();
     }
 
     async function startScanner() {
-      const devices = await Html5Qrcode.getCameras();
-      if (devices && devices.length) {
-        // نحاول إيجاد الكاميرا الأمامية
-        const frontCam = devices.find(d => d.label.toLowerCase().includes("front")) || devices[0];
-        const config = { fps: 10, qrbox: 250 };
+      // إذا كانت الكاميرات معروفة مسبقاً، لا تعيد الكشف
+      if (cameras.length === 0) {
+        cameras = await Html5Qrcode.getCameras();
+        if (!cameras || cameras.length === 0) {
+          alert("❌ لا توجد كاميرات متاحة.");
+          return;
+        }
 
-        html5QrcodeScanner = new Html5Qrcode("reader");
-        html5QrcodeScanner.start(
-          { deviceId: { exact: frontCam.id } },
-          config,
-          onScanSuccess,
-          onScanError
-        ).catch(err => {
-          alert("تعذر تشغيل الكاميرا: " + err);
-        });
-      } else {
-        alert("❌ لا توجد كاميرات متاحة.");
+        // حدد الكاميرا الخلفية كافتراضية (بناءً على الاسم)
+        const backIndex = cameras.findIndex(cam => cam.label.toLowerCase().includes("back"));
+        currentCameraIndex = backIndex !== -1 ? backIndex : 0;
       }
+
+      const config = { fps: 10, qrbox: 250 };
+      html5QrcodeScanner = new Html5Qrcode("reader");
+
+      html5QrcodeScanner.start(
+        { deviceId: { exact: cameras[currentCameraIndex].id } },
+        config,
+        onScanSuccess,
+        onScanError
+      ).then(() => {
+        document.getElementById("reader").style.display = "block";
+      }).catch(err => {
+        alert("تعذر تشغيل الكاميرا: " + err);
+      });
     }
 
-    window.onload = startScanner;
+    async function switchCamera() {
+      if (cameras.length === 0) {
+        cameras = await Html5Qrcode.getCameras();
+        if (cameras.length === 0) {
+          alert("لا توجد كاميرات.");
+          return;
+        }
+      }
+
+      // أوقف الكاميرا الحالية
+      if (html5QrcodeScanner) {
+        await html5QrcodeScanner.stop();
+      }
+
+      // تبديل إلى الكاميرا التالية
+      currentCameraIndex = (currentCameraIndex + 1) % cameras.length;
+      startScanner();
+    }
   </script>
 </body>
 </html>

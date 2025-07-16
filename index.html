@@ -93,5 +93,41 @@
     }
   </script>
 
+<script>
+  window.addEventListener('load', () => {
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      navigator.mediaDevices.getUserMedia({ video: true })
+        .then((stream) => {
+          // إيقاف الكاميرا بعد التأكد من الإذن
+          stream.getTracks().forEach(track => track.stop());
+          startScanner();
+        })
+        .catch((err) => {
+          alert('لم يتم منح إذن استخدام الكاميرا.');
+        });
+    } else {
+      alert('المتصفح لا يدعم الوصول إلى الكاميرا.');
+    }
+  });
+
+  function startScanner() {
+    const html5QrCode = new Html5Qrcode("reader");
+    html5QrCode.start(
+      { facingMode: "environment" },
+      {
+        fps: 10,
+        qrbox: 250
+      },
+      (decodedText, decodedResult) => {
+        alert(`تم المسح: ${decodedText}`);
+        html5QrCode.stop();
+      },
+      (errorMessage) => {
+        // تجاهل الأخطاء
+      }
+    );
+  }
+</script>
+
 </body>
 </html>

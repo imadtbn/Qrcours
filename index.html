@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ماسح رمز QR</title>
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Cairo', sans-serif;
+      text-align: center;
+      background-color: #f2f2f2;
+      direction: rtl;
+      padding: 20px;
+    }
+    h1 {
+      color: #007b5e;
+      margin-bottom: 20px;
+    }
+    #reader {
+      width: 300px;
+      max-width: 100%;
+      margin: auto;
+    }
+    #result {
+      margin-top: 20px;
+      padding: 10px;
+      background-color: #e6f2ec;
+      border: 1px solid #006233;
+      border-radius: 8px;
+      word-break: break-word;
+      font-size: 16px;
+    }
+    button {
+      margin-top: 15px;
+      padding: 10px 20px;
+      font-size: 16px;
+      background-color: #007b5e;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      display: none; /* سيتم إظهاره بعد المسح */
+    }
+    button:hover {
+      background-color: #005f47;
+    }
+    @media (max-width: 400px) {
+      #reader {
+        width: 100% !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>ماسح رمز QR</h1>
+
+  <div id="reader"></div>
+  <div id="result">النتيجة ستظهر هنا...</div>
+  <button id="restartBtn" onclick="restartScanner()">🔄 مسح رمز آخر</button>
+
+  <script>
+    function onScanSuccess(decodedText, decodedResult) {
+      let output = decodedText;
+      if (/^https?:\/\//.test(decodedText)) {
+        output = `<a href="${decodedText}" target="_blank" rel="noopener noreferrer" style="color:#007b5e">${decodedText}</a>`;
+      }
+      document.getElementById('result').innerHTML = `تم الكشف عن: ${output}`;
+      document.getElementById('restartBtn').style.display = 'inline-block';
+      html5QrcodeScanner.clear();
+    }
+
+    function onScanFailure(error) {
+      console.warn(`فشل المسح: ${error}`);
+    }
+
+    let html5QrcodeScanner = new Html5QrcodeScanner(
+      "reader", 
+      { fps: 10, qrbox: 250 },
+      false
+    );
+
+    html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+
+    function restartScanner() {
+      document.getElementById('result').innerText = 'النتيجة ستظهر هنا...';
+      document.getElementById('restartBtn').style.display = 'none';
+      html5QrcodeScanner.clear().then(() => {
+        html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+      });
+    }
+  </script>
+
+</body>
+</html>

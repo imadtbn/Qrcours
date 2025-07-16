@@ -56,6 +56,18 @@
 <body>
 
   <h1>ماسح رمز QR</h1>
+  
+<div style="text-align: center; margin-top: 20px;">
+  <button id="start-scan" style="padding: 10px 20px; font-size: 16px; background-color: #006233; color: white; border: none; border-radius: 5px; cursor: pointer;">
+    📷 فتح الكاميرا
+  </button>
+</div>
+
+<div id="reader" style="width: 300px; margin: 20px auto;"></div>
+
+<div id="scan-result" style="text-align: center; margin-top: 20px; font-size: 18px; color: #006233; font-weight: bold;">
+  <!-- سيتم عرض البيانات هنا -->
+</div>
 
   <div id="reader"></div>
   <div id="result">النتيجة ستظهر هنا...</div>
@@ -127,6 +139,48 @@
       }
     );
   }
+</script>
+
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+<script>
+  const startScanBtn = document.getElementById("start-scan");
+  const resultContainer = document.getElementById("scan-result");
+
+  let html5QrCode;
+
+  startScanBtn.addEventListener("click", () => {
+    const readerDiv = document.getElementById("reader");
+    readerDiv.innerHTML = ""; // تنظيف المحتوى القديم
+
+    html5QrCode = new Html5Qrcode("reader");
+
+    Html5Qrcode.getCameras().then(devices => {
+      if (devices && devices.length) {
+        const cameraId = devices[0].id;
+
+        html5QrCode.start(
+          cameraId,
+          {
+            fps: 10,
+            qrbox: { width: 250, height: 250 }
+          },
+          qrCodeMessage => {
+            resultContainer.innerHTML = "✅ تم المسح: " + qrCodeMessage;
+            html5QrCode.stop().then(() => {
+              console.log("تم إيقاف الكاميرا بعد المسح");
+            }).catch(err => console.error("خطأ في الإيقاف", err));
+          },
+          errorMessage => {
+            // يمكن تجاهل الأخطاء المؤقتة
+          }
+        ).catch(err => {
+          resultContainer.innerHTML = "❌ خطأ في تشغيل الكاميرا: " + err;
+        });
+      }
+    }).catch(err => {
+      resultContainer.innerHTML = "❌ لا توجد كاميرا: " + err;
+    });
+  });
 </script>
 
 </body>

@@ -73,12 +73,12 @@
         lastResult = qrCodeMessage;
         document.getElementById("result-text").innerText = qrCodeMessage;
         document.getElementById("result-container").style.display = "block";
-        html5QrcodeScanner.clear();
+        html5QrcodeScanner.stop();
       }
     }
 
     function onScanError(errorMessage) {
-      // تجاهل الأخطاء المتكررة
+      // تجاهل الأخطاء
     }
 
     function copyToClipboard() {
@@ -98,28 +98,30 @@
 
     function restartScanner() {
       document.getElementById("result-container").style.display = "none";
-      startScanner();
+      startScanner(); // إعادة التشغيل
     }
 
-    function startScanner() {
-      const config = {
-        fps: 10,
-        qrbox: 250,
-        facingMode: { exact: "user" } // استخدام الكاميرا الأمامية
-      };
+    async function startScanner() {
+      const devices = await Html5Qrcode.getCameras();
+      if (devices && devices.length) {
+        // نحاول إيجاد الكاميرا الأمامية
+        const frontCam = devices.find(d => d.label.toLowerCase().includes("front")) || devices[0];
+        const config = { fps: 10, qrbox: 250 };
 
-      html5QrcodeScanner = new Html5Qrcode("reader");
-      html5QrcodeScanner.start(
-        config.facingMode,
-        config,
-        onScanSuccess,
-        onScanError
-      ).catch(err => {
-        alert("حدث خطأ عند محاولة فتح الكاميرا: " + err);
-      });
+        html5QrcodeScanner = new Html5Qrcode("reader");
+        html5QrcodeScanner.start(
+          { deviceId: { exact: frontCam.id } },
+          config,
+          onScanSuccess,
+          onScanError
+        ).catch(err => {
+          alert("تعذر تشغيل الكاميرا: " + err);
+        });
+      } else {
+        alert("❌ لا توجد كاميرات متاحة.");
+      }
     }
 
-    // بدء المسح عند تحميل الصفحة
     window.onload = startScanner;
   </script>
 </body>

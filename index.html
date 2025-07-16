@@ -21,9 +21,9 @@
     #reader {
       width: 300px;
       max-width: 100%;
-      margin: auto;
+      margin: 20px auto;
     }
-    #result {
+    #scan-result {
       margin-top: 20px;
       padding: 10px;
       background-color: #e6f2ec;
@@ -31,157 +31,74 @@
       border-radius: 8px;
       word-break: break-word;
       font-size: 16px;
+      color: #006233;
+      font-weight: bold;
     }
-    button {
-      margin-top: 15px;
+    #start-scan {
       padding: 10px 20px;
       font-size: 16px;
-      background-color: #007b5e;
+      background-color: #006233;
       color: white;
       border: none;
-      border-radius: 6px;
+      border-radius: 5px;
       cursor: pointer;
-      display: none; /* سيتم إظهاره بعد المسح */
     }
-    button:hover {
+    #start-scan:hover {
       background-color: #005f47;
-    }
-    @media (max-width: 400px) {
-      #reader {
-        width: 100% !important;
-      }
     }
   </style>
 </head>
 <body>
 
   <h1>ماسح رمز QR</h1>
-  
-<div style="text-align: center; margin-top: 20px;">
-  <button id="start-scan" style="padding: 10px 20px; font-size: 16px; background-color: #006233; color: white; border: none; border-radius: 5px; cursor: pointer;">
-    📷 فتح الكاميرا
-  </button>
-</div>
 
-<div id="reader" style="width: 300px; margin: 20px auto;"></div>
-
-<div id="scan-result" style="text-align: center; margin-top: 20px; font-size: 18px; color: #006233; font-weight: bold;">
-  <!-- سيتم عرض البيانات هنا -->
-</div>
+  <button id="start-scan">📷 فتح الكاميرا</button>
 
   <div id="reader"></div>
-  <div id="result">النتيجة ستظهر هنا...</div>
-  <button id="restartBtn" onclick="restartScanner()">🔄 مسح رمز آخر</button>
+  <div id="scan-result">النتيجة ستظهر هنا...</div>
 
   <script>
-    function onScanSuccess(decodedText, decodedResult) {
-      let output = decodedText;
-      if (/^https?:\/\//.test(decodedText)) {
-        output = `<a href="${decodedText}" target="_blank" rel="noopener noreferrer" style="color:#007b5e">${decodedText}</a>`;
-      }
-      document.getElementById('result').innerHTML = `تم الكشف عن: ${output}`;
-      document.getElementById('restartBtn').style.display = 'inline-block';
-      html5QrcodeScanner.clear();
-    }
-
-    function onScanFailure(error) {
-      console.warn(`فشل المسح: ${error}`);
-    }
-
-    let html5QrcodeScanner = new Html5QrcodeScanner(
-      "reader", 
-      { fps: 10, qrbox: 250 },
-      false
-    );
-
-    html5QrcodeScanner.render(onScanSuccess, onScanFailure);
-
-    function restartScanner() {
-      document.getElementById('result').innerText = 'النتيجة ستظهر هنا...';
-      document.getElementById('restartBtn').style.display = 'none';
-      html5QrcodeScanner.clear().then(() => {
-        html5QrcodeScanner.render(onScanSuccess, onScanFailure);
-      });
-    }
-  </script>
-
-<script>
-  window.addEventListener('load', () => {
-    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-      navigator.mediaDevices.getUserMedia({ video: true })
-        .then((stream) => {
-          // إيقاف الكاميرا بعد التأكد من الإذن
-          stream.getTracks().forEach(track => track.stop());
-          startScanner();
-        })
-        .catch((err) => {
-          alert('لم يتم منح إذن استخدام الكاميرا.');
-        });
-    } else {
-      alert('المتصفح لا يدعم الوصول إلى الكاميرا.');
-    }
-  });
-
-  function startScanner() {
-    const html5QrCode = new Html5Qrcode("reader");
-    html5QrCode.start(
-      { facingMode: "environment" },
-      {
-        fps: 10,
-        qrbox: 250
-      },
-      (decodedText, decodedResult) => {
-        alert(`تم المسح: ${decodedText}`);
-        html5QrCode.stop();
-      },
-      (errorMessage) => {
-        // تجاهل الأخطاء
-      }
-    );
-  }
-</script>
-
-  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-<script>
-  const startScanBtn = document.getElementById("start-scan");
-  const resultContainer = document.getElementById("scan-result");
-
-  let html5QrCode;
-
-  startScanBtn.addEventListener("click", () => {
+    const startScanBtn = document.getElementById("start-scan");
     const readerDiv = document.getElementById("reader");
-    readerDiv.innerHTML = ""; // تنظيف المحتوى القديم
+    const resultContainer = document.getElementById("scan-result");
 
-    html5QrCode = new Html5Qrcode("reader");
+    let html5QrCode;
 
-    Html5Qrcode.getCameras().then(devices => {
-      if (devices && devices.length) {
-        const cameraId = devices[0].id;
+    startScanBtn.addEventListener("click", () => {
+      readerDiv.innerHTML = ""; // تنظيف محتوى القارئ
+      resultContainer.innerHTML = "📡 جاري تشغيل الكاميرا...";
 
-        html5QrCode.start(
-          cameraId,
-          {
-            fps: 10,
-            qrbox: { width: 250, height: 250 }
-          },
-          qrCodeMessage => {
-            resultContainer.innerHTML = "✅ تم المسح: " + qrCodeMessage;
-            html5QrCode.stop().then(() => {
-              console.log("تم إيقاف الكاميرا بعد المسح");
-            }).catch(err => console.error("خطأ في الإيقاف", err));
-          },
-          errorMessage => {
-            // يمكن تجاهل الأخطاء المؤقتة
-          }
-        ).catch(err => {
-          resultContainer.innerHTML = "❌ خطأ في تشغيل الكاميرا: " + err;
-        });
-      }
-    }).catch(err => {
-      resultContainer.innerHTML = "❌ لا توجد كاميرا: " + err;
+      html5QrCode = new Html5Qrcode("reader");
+
+      Html5Qrcode.getCameras().then(devices => {
+        if (devices && devices.length) {
+          const cameraId = devices[0].id;
+
+          html5QrCode.start(
+            cameraId,
+            { fps: 10, qrbox: { width: 250, height: 250 } },
+            qrCodeMessage => {
+              resultContainer.innerHTML = `✅ تم المسح:<br>${qrCodeMessage}`;
+              html5QrCode.stop().then(() => {
+                console.log("تم إيقاف الكاميرا بعد المسح.");
+              }).catch(err => {
+                console.error("خطأ أثناء إيقاف الكاميرا:", err);
+              });
+            },
+            errorMessage => {
+              // تجاهل أخطاء المسح المؤقتة
+            }
+          ).catch(err => {
+            resultContainer.innerHTML = "❌ فشل في تشغيل الكاميرا: " + err;
+          });
+        } else {
+          resultContainer.innerHTML = "❌ لم يتم العثور على كاميرا.";
+        }
+      }).catch(err => {
+        resultContainer.innerHTML = "❌ خطأ في الوصول إلى الكاميرا: " + err;
+      });
     });
-  });
-</script>
+  </script>
 
 </body>
 </html>

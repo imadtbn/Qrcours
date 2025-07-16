@@ -3,102 +3,41 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>ماسح رمز QR</title>
+  <title>مسح QR</title>
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Cairo&display=swap" rel="stylesheet">
   <style>
     body {
       font-family: 'Cairo', sans-serif;
       text-align: center;
-      background-color: #f2f2f2;
-      direction: rtl;
-      padding: 20px;
-    }
-    h1 {
-      color: #007b5e;
-      margin-bottom: 20px;
     }
     #reader {
-      width: 300px;
-      max-width: 100%;
-      margin: 20px auto;
-    }
-    #scan-result {
-      margin-top: 20px;
-      padding: 10px;
-      background-color: #e6f2ec;
-      border: 1px solid #006233;
-      border-radius: 8px;
-      word-break: break-word;
-      font-size: 16px;
-      color: #006233;
-      font-weight: bold;
-    }
-    #start-scan {
-      padding: 10px 20px;
-      font-size: 16px;
-      background-color: #006233;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-    #start-scan:hover {
-      background-color: #005f47;
+      width: 100%;
+      height: 100%;
     }
   </style>
 </head>
 <body>
-
-  <h1>ماسح رمز QR</h1>
-
-  <button id="start-scan">📷 فتح الكاميرا</button>
-
+  <h1>مسح QR</h1>
   <div id="reader"></div>
-  <div id="scan-result">النتيجة ستظهر هنا...</div>
 
   <script>
-    const startScanBtn = document.getElementById("start-scan");
-    const readerDiv = document.getElementById("reader");
-    const resultContainer = document.getElementById("scan-result");
+    function onScanSuccess(qrCodeMessage) {
+      alert("تم مسح الكود بنجاح: " + qrCodeMessage);
+    }
 
-    let html5QrCode;
+    function onScanError(errorMessage) {
+      console.warn(errorMessage);
+    }
 
-    startScanBtn.addEventListener("click", () => {
-      readerDiv.innerHTML = ""; // تنظيف محتوى القارئ
-      resultContainer.innerHTML = "📡 جاري تشغيل الكاميرا...";
+    const config = {
+      fps: 10,
+      qrbox: 250,
+      facingMode: "environment" // استخدام الكاميرا الخلفية بشكل افتراضي
+    };
 
-      html5QrCode = new Html5Qrcode("reader");
-
-      Html5Qrcode.getCameras().then(devices => {
-        if (devices && devices.length) {
-          const cameraId = devices[0].id;
-
-          html5QrCode.start(
-            cameraId,
-            { fps: 10, qrbox: { width: 250, height: 250 } },
-            qrCodeMessage => {
-              resultContainer.innerHTML = `✅ تم المسح:<br>${qrCodeMessage}`;
-              html5QrCode.stop().then(() => {
-                console.log("تم إيقاف الكاميرا بعد المسح.");
-              }).catch(err => {
-                console.error("خطأ أثناء إيقاف الكاميرا:", err);
-              });
-            },
-            errorMessage => {
-              // تجاهل أخطاء المسح المؤقتة
-            }
-          ).catch(err => {
-            resultContainer.innerHTML = "❌ فشل في تشغيل الكاميرا: " + err;
-          });
-        } else {
-          resultContainer.innerHTML = "❌ لم يتم العثور على كاميرا.";
-        }
-      }).catch(err => {
-        resultContainer.innerHTML = "❌ خطأ في الوصول إلى الكاميرا: " + err;
-      });
-    });
+    let html5QrcodeScanner = new Html5QrcodeScanner(
+      "reader", config);
+    html5QrcodeScanner.render(onScanSuccess, onScanError);
   </script>
-
 </body>
 </html>

@@ -144,5 +144,30 @@
       const body = encodeURIComponent(document.getElementById("result").value);
       window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
     }
-  </script></body>
+  </script>
+
+  
+function sendToGoogleSheet(name) {
+  const endpoint = "https://script.google.com/macros/s/WEB_APP_URL/exec"; // عدّل بالرابط الحقيقي
+
+  fetch(endpoint, {
+    method: "POST",
+    body: JSON.stringify({ name }),
+    headers: { "Content-Type": "application/json" }
+  })
+  .then(res => console.log("تم الإرسال إلى Google Sheets"))
+  .catch(err => console.error("فشل الإرسال", err));
+}
+
+function onScanSuccess(decodedText, decodedResult) {
+  resultField.value = decodedText;
+
+  // استخراج الاسم من النص
+  const nameMatch = decodedText.match(/الاسم:\s*(.+)/);
+  const name = nameMatch ? nameMatch[1].trim() : "غير معروف";
+
+  sendToGoogleSheet(name);
+}
+  
+</body>
 </html>

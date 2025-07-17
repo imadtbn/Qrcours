@@ -94,17 +94,26 @@
     }
 
     function generateQRCode() {
-      const name = document.getElementById("name").value;
-      const level = document.getElementById("level").value;
-      const phone = document.getElementById("phone").value;
-      const email = document.getElementById("email").value;
+  const name = document.getElementById("name").value;
+  const level = document.getElementById("level").value;
+  const phone = document.getElementById("phone").value;
+  const email = document.getElementById("email").value;
 
-      const data = `الاسم: ${name}\nالطور: ${level}\nالهاتف: ${phone}\nالإيميل: ${email}`;
-      resultField.value = data;
-      QRCode.toCanvas(document.getElementById("qrcode"), data, error => {
-        if (error) alert("حدث خطأ في توليد الكود");
-      });
+  const data = `الاسم: ${name}\nالطور: ${level}\nالهاتف: ${phone}\nالإيميل: ${email}`;
+  resultField.value = data;
+
+  const qrcodeContainer = document.getElementById("qrcode");
+  qrcodeContainer.innerHTML = ""; // حذف الكود السابق
+  const canvas = document.createElement("canvas");
+  qrcodeContainer.appendChild(canvas);
+
+  QRCode.toCanvas(canvas, data, function (error) {
+    if (error) {
+      alert("حدث خطأ في توليد الكود");
+      console.error(error);
     }
+  });
+}
 
     function sendCodeByEmail() {
       const email = document.getElementById("email").value;

@@ -23,9 +23,19 @@
       background-color: #00994d;
       color: white;
       cursor: pointer;
+      font-size: 0.9em;
+      padding: 6px 10px;
+      display: inline-block;
     }
     button:hover {
       background-color: #007a3d;
+    }
+    .button-group {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 6px;
+      margin-bottom: 10px;
     }
     #reader {
       margin: auto;
@@ -45,12 +55,11 @@
 <body>
   <h1>📱 قارئ ومحرر كود QR</h1>
   <p><strong>الأستاذ محمد محمد، أستاذ العلوم الطبيعية</strong></p>  <div id="reader"></div>
-  <button onclick="stopCamera()">🔴 غلق الكاميرا</button>
-  <button onclick="startCamera()">📷 فتح الكاميرا</button>
-  <button onclick="rescan()">🔄 إعادة المسح</button>
-  <br>
-  <textarea id="scanned-result" rows="5" cols="40" placeholder="نتيجة المسح أو الكود المُحرر..."></textarea>
-  <br>
+  <div class="button-group">
+    <button onclick="stopCamera()">🔴 غلق الكاميرا</button>
+    <button onclick="startCamera()">📷 فتح الكاميرا</button>
+    <button onclick="rescan()">🔄 إعادة المسح</button>
+  </div>  <textarea id="scanned-result" rows="5" cols="40" placeholder="نتيجة المسح أو الكود المُحرر..."></textarea>  <br>
   <button onclick="saveCode()">💾 حفظ الكود</button>
   <button onclick="sendCodeByEmail()">📩 إرسال عبر البريد</button>  <h3>🔧 توليد كود QR جديد</h3>
   <form id="qrForm">

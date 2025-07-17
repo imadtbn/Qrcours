@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="ar" dir="rtl">
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
   <title>📘 أداة قراءة و إنشاء QR</title>
@@ -69,32 +70,58 @@
 </head>
 <body>
   <img src="https://cdn-icons-png.flaticon.com/512/3135/3135755.png" alt="أيقونة أستاذ" class="icon">
-  <h1>الأستاذ محمد محمد، أستاذ العلوم الطبيعية</h1>  <div id="reader"></div>
+  <h1>الأستاذ محمد محمد، أستاذ العلوم الطبيعية</h1>  
+
+  <div id="reader"></div>
   <div class="controls">
     <button onclick="startScanner()">📷 فتح الكاميرا</button>
     <button onclick="stopScanner()">✖️ غلق الكاميرا</button>
     <button onclick="restartScanner()">🔄 إعادة المسح</button>
   </div>
+
   <textarea id="result" rows="4" placeholder="نتيجة المسح..." readonly></textarea>
-  <button onclick="saveResult()">💾 حفظ</button>  <h2>🧾 إنشاء كود QR جديد</h2>
+  <button onclick="saveResult()">💾 حفظ</button>  
+
+  <h2>🧾 إنشاء كود QR جديد</h2>
   <input type="text" id="name" placeholder="الاسم واللقب">
   <input type="text" id="level" placeholder="الطور الدراسي">
   <input type="text" id="phone" placeholder="رقم الهاتف">
   <input type="email" id="email" placeholder="البريد الإلكتروني">
   <button onclick="generateQRCode()">⚙️ إنشاء</button>
   <div id="qrcode"></div>
-  <button onclick="sendEmail()">📤 إرسال الكود المولّد عبر البريد</button>  <script>
+  <button onclick="sendEmail()">📤 إرسال الكود عبر البريد</button>  
+
+  <script>
     let scanner;
+
+    function sendToGoogleSheet(name) {
+      const endpoint = "https://script.google.com/macros/s/WEB_APP_URL/exec"; // <-- ضع الرابط الحقيقي هنا
+      fetch(endpoint, {
+        method: "POST",
+        body: JSON.stringify({ name }),
+        headers: { "Content-Type": "application/json" }
+      })
+      .then(res => console.log("تم الإرسال إلى Google Sheets"))
+      .catch(err => console.error("فشل الإرسال", err));
+    }
+
+    function onScanSuccess(decodedText, decodedResult) {
+      const resultField = document.getElementById("result");
+      resultField.value = decodedText;
+
+      const nameMatch = decodedText.match(/الاسم:\s*(.+)/);
+      const name = nameMatch ? nameMatch[1].trim() : "غير معروف";
+
+      sendToGoogleSheet(name);
+      stopScanner(); // غلق الكاميرا بعد نجاح المسح
+    }
 
     function startScanner() {
       scanner = new Html5Qrcode("reader");
       scanner.start(
         { facingMode: "environment" },
         { fps: 10, qrbox: 250 },
-        qrCodeMessage => {
-          document.getElementById("result").value = qrCodeMessage;
-          stopScanner();
-        },
+        onScanSuccess,
         errorMessage => {}
       ).catch(err => console.error(err));
     }
@@ -125,7 +152,7 @@
       const phone = document.getElementById("phone").value;
       const email = document.getElementById("email").value;
 
-      const data = `الاسم: ${name}\nالطور: ${level}\nالهاتف: ${phone}\nالإيميل: ${email}`;
+      const data = `الاسم: ${name}\المستوى الدراسي: ${level}\nالهاتف: ${phone}\nالإيميل: ${email}`;
       document.getElementById("result").value = data;
 
       const qrcodeContainer = document.getElementById("qrcode");
@@ -145,29 +172,5 @@
       window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
     }
   </script>
-
-  
-function sendToGoogleSheet(name) {
-  const endpoint = "https://script.google.com/macros/s/WEB_APP_URL/exec"; // عدّل بالرابط الحقيقي
-
-  fetch(endpoint, {
-    method: "POST",
-    body: JSON.stringify({ name }),
-    headers: { "Content-Type": "application/json" }
-  })
-  .then(res => console.log("تم الإرسال إلى Google Sheets"))
-  .catch(err => console.error("فشل الإرسال", err));
-}
-
-function onScanSuccess(decodedText, decodedResult) {
-  resultField.value = decodedText;
-
-  // استخراج الاسم من النص
-  const nameMatch = decodedText.match(/الاسم:\s*(.+)/);
-  const name = nameMatch ? nameMatch[1].trim() : "غير معروف";
-
-  sendToGoogleSheet(name);
-}
-  
 </body>
 </html>

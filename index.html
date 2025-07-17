@@ -1,165 +1,116 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<!DOCTYPE html><html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>مسح QR</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>مسح QR وتحريره</title>
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   <style>
     body {
       font-family: 'Cairo', sans-serif;
-      background-color: #f4f4f4;
-      color: #222;
-      text-align: center;
+      background-color: #e6f2ec;
       padding: 20px;
+      text-align: center;
+      color: #004d26;
     }
-
-    h1 {
-      color: #006233;
+    input, button, textarea {
+      margin: 10px;
+      padding: 10px;
+      font-size: 1em;
+      border: 1px solid #006633;
+      border-radius: 5px;
     }
-
-    #reader {
-      width: 100%;
-      max-width: 400px;
-      margin: auto;
-      margin-top: 20px;
-      border: 2px solid #006233;
-      border-radius: 8px;
-      display: none;
-    }
-
-    #result-container {
-      margin-top: 20px;
-      padding: 15px;
-      background: #e1f5e1;
-      border: 1px solid #006233;
-      border-radius: 10px;
-      display: none;
-    }
-
     button {
-      background-color: #006233;
+      background-color: #00994d;
       color: white;
-      border: none;
-      padding: 10px 15px;
-      margin: 10px 5px;
-      border-radius: 6px;
-      font-size: 16px;
       cursor: pointer;
     }
-
     button:hover {
-      background-color: #004d26;
+      background-color: #007a3d;
     }
-
-    #control-buttons {
-      margin-top: 20px;
+    #reader {
+      margin: auto;
+      width: 100%;
+      max-width: 400px;
+      border: 2px solid #00994d;
+      border-radius: 8px;
+    }
+    #qrcode canvas {
+      margin-top: 10px;
+      border: 1px solid #00994d;
+      padding: 5px;
+      background-color: white;
     }
   </style>
 </head>
 <body>
-  <h1>مسح QR</h1>
+  <h1>📱 قارئ ومحرر كود QR</h1>
+  <p><strong>الأستاذ محمد محمد، أستاذ العلوم الطبيعية</strong></p>  <div id="reader"></div>
+  <button onclick="stopCamera()">🔴 غلق الكاميرا</button>
+  <button onclick="startCamera()">📷 فتح الكاميرا</button>
+  <button onclick="rescan()">🔄 إعادة المسح</button>
+  <br>
+  <textarea id="scanned-result" rows="5" cols="40" placeholder="نتيجة المسح أو الكود المُحرر..."></textarea>
+  <br>
+  <button onclick="saveCode()">💾 حفظ الكود</button>
+  <button onclick="sendCodeByEmail()">📩 إرسال عبر البريد</button>  <h3>🔧 توليد كود QR جديد</h3>
+  <form id="qrForm">
+    <input type="text" id="name" placeholder="الاسم واللقب" required /><br>
+    <input type="text" id="level" placeholder="الطور الدراسي" required /><br>
+    <input type="tel" id="phone" placeholder="رقم الهاتف" required /><br>
+    <input type="email" id="email" placeholder="البريد الإلكتروني" required /><br>
+    <button type="button" onclick="generateQRCode()">🆕 توليد الكود</button>
+  </form>
+  <div id="qrcode"></div>  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>  <script>
+    let scanner;
+    const resultField = document.getElementById("scanned-result");
 
-  <div id="control-buttons">
-    <button onclick="startScanner()">📷 فتح الكاميرا</button>
-  </div>
+    function startCamera() {
+      scanner = new Html5Qrcode("reader");
+      scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, onScanSuccess);
+    }
 
-  <div id="reader"></div>
-
-  <div id="result-container">
-    <h3>نتيجة المسح:</h3>
-    <p id="result-text"></p>
-    <button onclick="copyToClipboard()">📋 نسخ</button>
-    <button onclick="saveToDatabase()">💾 حفظ</button>
-    <button onclick="restartScanner()">🔄 إعادة المسح</button>
-  </div>
-
-  <script>
-    let html5QrcodeScanner;
-    let lastResult = "";
-    let currentCameraIndex = 0;
-    let cameras = [];
-
-    function onScanSuccess(qrCodeMessage) {
-      if (qrCodeMessage !== lastResult) {
-        lastResult = qrCodeMessage;
-        document.getElementById("result-text").innerText = qrCodeMessage;
-        document.getElementById("result-container").style.display = "block";
-        html5QrcodeScanner.stop();
+    function stopCamera() {
+      if (scanner) {
+        scanner.stop().then(() => scanner.clear());
       }
     }
 
-    function onScanError(errorMessage) {
-      // تجاهل الأخطاء
+    function rescan() {
+      stopCamera();
+      setTimeout(startCamera, 500);
     }
 
-    function copyToClipboard() {
-      const text = document.getElementById("result-text").innerText;
-      navigator.clipboard.writeText(text);
-      alert("📋 تم نسخ النص!");
+    function onScanSuccess(decodedText) {
+      resultField.value = decodedText;
+      stopCamera();
     }
 
-    function saveToDatabase() {
-      const data = {
-        content: document.getElementById("result-text").innerText,
-        timestamp: new Date().toISOString()
-      };
-      console.log("🔁 حفظ في قاعدة البيانات:", data);
-      alert("✅ تم حفظ البيانات مؤقتاً (التخزين الحقيقي يتطلب ربط بقاعدة بيانات).");
+    function saveCode() {
+      const blob = new Blob([resultField.value], { type: "text/plain;charset=utf-8" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "qr_code.txt";
+      link.click();
     }
 
-    function restartScanner() {
-      document.getElementById("result-container").style.display = "none";
-      startScanner();
-    }
+    function generateQRCode() {
+      const name = document.getElementById("name").value;
+      const level = document.getElementById("level").value;
+      const phone = document.getElementById("phone").value;
+      const email = document.getElementById("email").value;
 
-    async function startScanner() {
-      // إذا كانت الكاميرات معروفة مسبقاً، لا تعيد الكشف
-      if (cameras.length === 0) {
-        cameras = await Html5Qrcode.getCameras();
-        if (!cameras || cameras.length === 0) {
-          alert("❌ لا توجد كاميرات متاحة.");
-          return;
-        }
-
-        // حدد الكاميرا الخلفية كافتراضية (بناءً على الاسم)
-        const backIndex = cameras.findIndex(cam => cam.label.toLowerCase().includes("back"));
-        currentCameraIndex = backIndex !== -1 ? backIndex : 0;
-      }
-
-      const config = { fps: 10, qrbox: 250 };
-      html5QrcodeScanner = new Html5Qrcode("reader");
-
-      html5QrcodeScanner.start(
-        { deviceId: { exact: cameras[currentCameraIndex].id } },
-        config,
-        onScanSuccess,
-        onScanError
-      ).then(() => {
-        document.getElementById("reader").style.display = "block";
-      }).catch(err => {
-        alert("تعذر تشغيل الكاميرا: " + err);
+      const data = `الاسم: ${name}\nالطور: ${level}\nالهاتف: ${phone}\nالإيميل: ${email}`;
+      resultField.value = data;
+      QRCode.toCanvas(document.getElementById("qrcode"), data, error => {
+        if (error) alert("حدث خطأ في توليد الكود");
       });
     }
 
-    async function switchCamera() {
-      if (cameras.length === 0) {
-        cameras = await Html5Qrcode.getCameras();
-        if (cameras.length === 0) {
-          alert("لا توجد كاميرات.");
-          return;
-        }
-      }
-
-      // أوقف الكاميرا الحالية
-      if (html5QrcodeScanner) {
-        await html5QrcodeScanner.stop();
-      }
-
-      // تبديل إلى الكاميرا التالية
-      currentCameraIndex = (currentCameraIndex + 1) % cameras.length;
-      startScanner();
+    function sendCodeByEmail() {
+      const email = document.getElementById("email").value;
+      const subject = encodeURIComponent("مشاركة كود QR");
+      const body = encodeURIComponent(resultField.value);
+      window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
     }
-  </script>
-</body>
+  </script></body>
 </html>

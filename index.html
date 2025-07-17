@@ -1,105 +1,121 @@
 <!DOCTYPE html><html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>مسح QR وتحريره</title>
+  <meta charset="UTF-8">
+  <title>📘 أداة قراءة و إنشاء QR</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
   <style>
     body {
       font-family: 'Cairo', sans-serif;
       background-color: #e6f2ec;
       padding: 20px;
-      text-align: center;
       color: #004d26;
     }
-    input, button, textarea {
-      margin: 10px;
+    h1 {
+      text-align: center;
+      color: #006633;
+    }
+    .icon {
+      display: block;
+      margin: 0 auto 10px auto;
+      width: 80px;
+    }
+    #reader {
+      width: 100%;
+      max-width: 400px;
+      margin: auto;
+      border: 2px solid #00994d;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    textarea, input, button {
+      display: block;
+      width: 100%;
+      margin: 10px auto;
       padding: 10px;
-      font-size: 1em;
-      border: 1px solid #006633;
-      border-radius: 5px;
+      font-size: 16px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
     }
     button {
       background-color: #00994d;
       color: white;
+      border: none;
       cursor: pointer;
-      font-size: 0.9em;
-      padding: 6px 10px;
-      display: inline-block;
     }
     button:hover {
       background-color: #007a3d;
     }
-    .button-group {
+    .controls {
       display: flex;
       flex-wrap: wrap;
+      gap: 5px;
       justify-content: center;
-      gap: 6px;
-      margin-bottom: 10px;
+      margin-bottom: 15px;
     }
-    #reader {
-      margin: auto;
-      width: 100%;
-      max-width: 400px;
-      border: 2px solid #00994d;
-      border-radius: 8px;
+    .controls button {
+      flex: 1 1 calc(33.33% - 10px);
+      min-width: 90px;
+      font-size: 14px;
+      padding: 8px;
     }
     #qrcode canvas {
-      margin-top: 10px;
-      border: 1px solid #00994d;
-      padding: 5px;
-      background-color: white;
+      margin: auto;
+      display: block;
     }
   </style>
 </head>
 <body>
-  <h1>📱 قارئ ومحرر كود QR</h1>
-  <p><strong>الأستاذ محمد محمد، أستاذ العلوم الطبيعية</strong></p>  <div id="reader"></div>
-  <div class="button-group">
-    <button onclick="stopCamera()">🔴 غلق الكاميرا</button>
-    <button onclick="startCamera()">📷 فتح الكاميرا</button>
-    <button onclick="rescan()">🔄 إعادة المسح</button>
-  </div>  <textarea id="scanned-result" rows="5" cols="40" placeholder="نتيجة المسح أو الكود المُحرر..."></textarea>  <br>
-  <button onclick="saveCode()">💾 حفظ</button>
-  <button onclick="sendCodeByEmail()">📩 إرسال عبر البريد</button>  <h3>🔧 إنشاء كود QR جديد</h3>
-  <form id="qrForm">
-    <input type="text" id="name" placeholder="الاسم واللقب" required /><br>
-    <input type="text" id="level" placeholder="الطور الدراسي" required /><br>
-    <input type="tel" id="phone" placeholder="رقم الهاتف" required /><br>
-    <input type="email" id="email" placeholder="البريد الإلكتروني" required /><br>
-    <button type="button" onclick="generateQRCode()">🆕 إنشاء الكود</button>
-    <button type="button" onclick="sendGeneratedQRByEmail()">📤 إرسال الكود المولّد عبر البريد</button>
-  </form>
-  <div id="qrcode"></div>  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>  <script>
+  <img src="https://cdn-icons-png.flaticon.com/512/3135/3135755.png" alt="أيقونة أستاذ" class="icon">
+  <h1>الأستاذ محمد محمد، أستاذ العلوم الطبيعية</h1>  <div id="reader"></div>
+  <div class="controls">
+    <button onclick="startScanner()">📷 فتح الكاميرا</button>
+    <button onclick="stopScanner()">✖️ غلق الكاميرا</button>
+    <button onclick="restartScanner()">🔄 إعادة المسح</button>
+  </div>
+  <textarea id="result" rows="4" placeholder="نتيجة المسح..." readonly></textarea>
+  <button onclick="saveResult()">💾 حفظ</button>  <h2>🧾 إنشاء كود QR جديد</h2>
+  <input type="text" id="name" placeholder="الاسم واللقب">
+  <input type="text" id="level" placeholder="الطور الدراسي">
+  <input type="text" id="phone" placeholder="رقم الهاتف">
+  <input type="email" id="email" placeholder="البريد الإلكتروني">
+  <button onclick="generateQRCode()">⚙️ إنشاء</button>
+  <div id="qrcode"></div>
+  <button onclick="sendEmail()">📤 إرسال الكود المولّد عبر البريد</button>  <script>
     let scanner;
-    const resultField = document.getElementById("scanned-result");
 
-    function startCamera() {
+    function startScanner() {
       scanner = new Html5Qrcode("reader");
-      scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, onScanSuccess);
+      scanner.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: 250 },
+        qrCodeMessage => {
+          document.getElementById("result").value = qrCodeMessage;
+          stopScanner();
+        },
+        errorMessage => {}
+      ).catch(err => console.error(err));
     }
 
-    function stopCamera() {
+    function stopScanner() {
       if (scanner) {
-        scanner.stop().then(() => scanner.clear());
+        scanner.stop().then(() => scanner.clear()).catch(err => console.error(err));
       }
     }
 
-    function rescan() {
-      stopCamera();
-      setTimeout(startCamera, 500);
+    function restartScanner() {
+      stopScanner();
+      setTimeout(startScanner, 500);
     }
 
-    function onScanSuccess(decodedText) {
-      resultField.value = decodedText;
-      stopCamera();
-    }
-
-    function saveCode() {
-      const blob = new Blob([resultField.value], { type: "text/plain;charset=utf-8" });
+    function saveResult() {
+      const text = document.getElementById("result").value;
+      const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
-      link.download = "qr_code.txt";
+      link.download = "qr-result.txt";
       link.click();
     }
 
@@ -110,7 +126,7 @@
       const email = document.getElementById("email").value;
 
       const data = `الاسم: ${name}\nالطور: ${level}\nالهاتف: ${phone}\nالإيميل: ${email}`;
-      resultField.value = data;
+      document.getElementById("result").value = data;
 
       const qrcodeContainer = document.getElementById("qrcode");
       qrcodeContainer.innerHTML = "";
@@ -118,25 +134,14 @@
       qrcodeContainer.appendChild(canvas);
 
       QRCode.toCanvas(canvas, data, function (error) {
-        if (error) {
-          alert("حدث خطأ في إنشاء الكود");
-          console.error(error);
-        }
+        if (error) console.error(error);
       });
     }
 
-    function sendCodeByEmail() {
+    function sendEmail() {
       const email = document.getElementById("email").value;
-      const subject = encodeURIComponent("مشاركة كود QR");
-      const body = encodeURIComponent(resultField.value);
-      window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
-    }
-
-    function sendGeneratedQRByEmail() {
-      const email = document.getElementById("email").value;
-      const name = document.getElementById("name").value;
-      const subject = encodeURIComponent("الكود الخاص بالطالب: " + name);
-      const body = encodeURIComponent(resultField.value);
+      const subject = encodeURIComponent("معلومات QR");
+      const body = encodeURIComponent(document.getElementById("result").value);
       window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
     }
   </script></body>

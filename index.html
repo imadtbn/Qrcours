@@ -59,6 +59,7 @@
     <input type="tel" id="phone" placeholder="رقم الهاتف" required /><br>
     <input type="email" id="email" placeholder="البريد الإلكتروني" required /><br>
     <button type="button" onclick="generateQRCode()">🆕 توليد الكود</button>
+    <button type="button" onclick="sendGeneratedQRByEmail()">📤 إرسال الكود المولّد عبر البريد</button>
   </form>
   <div id="qrcode"></div>  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>  <script>
     let scanner;
@@ -94,30 +95,38 @@
     }
 
     function generateQRCode() {
-  const name = document.getElementById("name").value;
-  const level = document.getElementById("level").value;
-  const phone = document.getElementById("phone").value;
-  const email = document.getElementById("email").value;
+      const name = document.getElementById("name").value;
+      const level = document.getElementById("level").value;
+      const phone = document.getElementById("phone").value;
+      const email = document.getElementById("email").value;
 
-  const data = `الاسم: ${name}\nالطور: ${level}\nالهاتف: ${phone}\nالإيميل: ${email}`;
-  resultField.value = data;
+      const data = `الاسم: ${name}\nالطور: ${level}\nالهاتف: ${phone}\nالإيميل: ${email}`;
+      resultField.value = data;
 
-  const qrcodeContainer = document.getElementById("qrcode");
-  qrcodeContainer.innerHTML = ""; // حذف الكود السابق
-  const canvas = document.createElement("canvas");
-  qrcodeContainer.appendChild(canvas);
+      const qrcodeContainer = document.getElementById("qrcode");
+      qrcodeContainer.innerHTML = "";
+      const canvas = document.createElement("canvas");
+      qrcodeContainer.appendChild(canvas);
 
-  QRCode.toCanvas(canvas, data, function (error) {
-    if (error) {
-      alert("حدث خطأ في توليد الكود");
-      console.error(error);
+      QRCode.toCanvas(canvas, data, function (error) {
+        if (error) {
+          alert("حدث خطأ في توليد الكود");
+          console.error(error);
+        }
+      });
     }
-  });
-}
 
     function sendCodeByEmail() {
       const email = document.getElementById("email").value;
       const subject = encodeURIComponent("مشاركة كود QR");
+      const body = encodeURIComponent(resultField.value);
+      window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
+    }
+
+    function sendGeneratedQRByEmail() {
+      const email = document.getElementById("email").value;
+      const name = document.getElementById("name").value;
+      const subject = encodeURIComponent("الكود الخاص بالطالب: " + name);
       const body = encodeURIComponent(resultField.value);
       window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
     }

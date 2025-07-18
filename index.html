@@ -100,25 +100,25 @@
     let scanner;
 
 function sendToGoogleForm(name, level, phone, email) {
+  const now = new Date().toLocaleString('ar-DZ'); // توقيت الجزائر
   const formUrl = "https://docs.google.com/forms/d/e/1FAIpQLSeixbPbHA_0xWyZtBgGOEpvmKImPH-Uw-3A0k0etENweF2IuA/formResponse?";
   const params = new URLSearchParams({
     "entry.791131319": name,
     "entry.1205505594": level,
     "entry.446566530": phone,
-    "entry.1817768015": email
+    "entry.1817768015": email,
+    "entry.123456789": now // <-- تاريخ ووقت المسح
   });
 
   const finalUrl = formUrl + params.toString();
 
-  // الإرسال دون انتظار استجابة (Google Forms لا تدعم CORS)
   fetch(finalUrl, {
     method: "POST",
     mode: "no-cors"
   })
-  .then(() => console.log("✅ تم الإرسال إلى Google Form"))
+  .then(() => console.log("✅ تم الإرسال إلى Google Form مع الوقت"))
   .catch(err => console.error("❌ فشل الإرسال", err));
 }
-
 
     function onScanSuccess(decodedText, decodedResult) {
       const resultField = document.getElementById("result");

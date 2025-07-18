@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>📘 أداة قراءة و إنشاء QR</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
   <style>
@@ -81,7 +82,7 @@
   </div>
 
   <textarea id="result" rows="4" placeholder="نتيجة المسح..." readonly></textarea>
-  <button onclick="saveResult()">💾 حفظ النتيجة</button>  
+  <button onclick="saveResult()">💾 حفظ النتيجة كـ TXT</button>  
 
   <!-- قسم الإنشاء -->
   <h2>🧾 إنشاء كود QR جديد</h2>
@@ -92,6 +93,7 @@
   <button onclick="generateQRCode()">🔲 إنشاء الكود</button>
   <div id="qrcode"></div>
   <button onclick="saveQRCode()">💾 حفظ الكود QR</button>
+  <button onclick="saveAsCSV()">📥 حفظ كـ CSV</button>
   <button onclick="sendEmail()">📧 إرسال عبر البريد</button>
 
   <script>
@@ -187,6 +189,21 @@
       link.href = canvas.toDataURL("image/png");
       link.click();
       alert("✅ تم حفظ الكود بنجاح!");
+    }
+
+    function saveAsCSV() {
+      const name = document.getElementById("name").value;
+      const level = document.getElementById("level").value;
+      const phone = document.getElementById("phone").value;
+      const email = document.getElementById("email").value;
+
+      const csvContent = `الاسم,المستوى الدراسي,الهاتف,الإيميل\n"${name}","${level}","${phone}","${email}"`;
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `${name.trim().replace(/\s+/g, "_") || "بيانات"}.csv`;
+      link.click();
+      alert("✅ تم حفظ الملف كـ CSV بنجاح!");
     }
 
     function sendEmail() {

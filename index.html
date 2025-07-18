@@ -81,6 +81,7 @@
 
   <textarea id="result" rows="4" placeholder="نتيجة المسح..." readonly></textarea>
   <button onclick="saveResult()">💾 حفظ</button>  
+  alert("✅ تم الحفظ بنجاح!");
 
   <h2>🧾 إنشاء كود QR جديد</h2>
   <input type="text" id="name" placeholder="الاسم واللقب">
@@ -152,7 +153,7 @@
       const phone = document.getElementById("phone").value;
       const email = document.getElementById("email").value;
 
-      const data = `الاسم: ${name}\المستوى الدراسي: ${level}\nالهاتف: ${phone}\nالإيميل: ${email}`;
+      const data = `الاسم: ${name}\nالمستوى الدراسي: ${level}\nالهاتف: ${phone}\nالإيميل: ${email}`;
       document.getElementById("result").value = data;
 
       const qrcodeContainer = document.getElementById("qrcode");

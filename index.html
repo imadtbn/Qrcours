@@ -85,19 +85,20 @@
 
   <!-- قسم الإنشاء -->
   <h2>🧾 إنشاء كود QR جديد</h2>
-  <input type="text" id="name" placeholder="الاسم">
+  <input type="text" id="name" placeholder="الاسم الكامل">
   <input type="text" id="level" placeholder="المستوى الدراسي">
   <input type="text" id="phone" placeholder="رقم الهاتف">
   <input type="email" id="email" placeholder="البريد الإلكتروني">
   <button onclick="generateQRCode()">🔲 إنشاء الكود</button>
   <div id="qrcode"></div>
+  <button onclick="saveQRCode()">💾 حفظ الكود QR</button>
   <button onclick="sendEmail()">📧 إرسال عبر البريد</button>
 
   <script>
     let scanner;
 
     function sendToGoogleSheet(name, level, phone, email) {
-      const endpoint = "https://script.google.com/macros/s/WEB_APP_URL/exec"; // ← غيّره بالرابط الحقيقي
+      const endpoint = "https://script.google.com/macros/s/WEB_APP_URL/exec"; // ← غيّره بالرابط الفعلي
       fetch(endpoint, {
         method: "POST",
         body: JSON.stringify({ name, level, phone, email }),
@@ -143,10 +144,13 @@
 
     function saveResult() {
       const text = document.getElementById("result").value;
+      const nameMatch = text.match(/الاسم:\s*(.+)/);
+      const filename = nameMatch ? nameMatch[1].trim().replace(/\s+/g, "_") + ".txt" : "qr-result.txt";
+
       const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
-      link.download = "qr-result.txt";
+      link.download = filename;
       link.click();
       alert("✅ تم الحفظ بنجاح!");
     }
@@ -168,6 +172,21 @@
       QRCode.toCanvas(canvas, data, function (error) {
         if (error) console.error(error);
       });
+    }
+
+    function saveQRCode() {
+      const canvas = document.querySelector("#qrcode canvas");
+      if (!canvas) {
+        alert("❌ لا يوجد كود QR لحفظه");
+        return;
+      }
+
+      const name = document.getElementById("name").value.trim().replace(/\s+/g, "_") || "qr_code";
+      const link = document.createElement("a");
+      link.download = `${name}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+      alert("✅ تم حفظ الكود بنجاح!");
     }
 
     function sendEmail() {

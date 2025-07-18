@@ -99,16 +99,26 @@
   <script>
     let scanner;
 
-    function sendToGoogleSheet(name, level, phone, email) {
-      const endpoint = "https://script.google.com/macros/s/WEB_APP_URL/exec"; // ← غيّره بالرابط الفعلي
-      fetch(endpoint, {
-        method: "POST",
-        body: JSON.stringify({ name, level, phone, email }),
-        headers: { "Content-Type": "application/json" }
-      })
-      .then(res => console.log("✅ تم الإرسال إلى Google Sheets"))
-      .catch(err => console.error("❌ فشل الإرسال", err));
-    }
+function sendToGoogleForm(name, level, phone, email) {
+  const formUrl = "https://docs.google.com/forms/d/e/1FAIpQLSeixbPbHA_0xWyZtBgGOEpvmKImPH-Uw-3A0k0etENweF2IuA/formResponse?";
+  const params = new URLSearchParams({
+    "entry.791131319": name,
+    "entry.1205505594": level,
+    "entry.446566530": phone,
+    "entry.1817768015": email
+  });
+
+  const finalUrl = formUrl + params.toString();
+
+  // الإرسال دون انتظار استجابة (Google Forms لا تدعم CORS)
+  fetch(finalUrl, {
+    method: "POST",
+    mode: "no-cors"
+  })
+  .then(() => console.log("✅ تم الإرسال إلى Google Form"))
+  .catch(err => console.error("❌ فشل الإرسال", err));
+}
+
 
     function onScanSuccess(decodedText, decodedResult) {
       const resultField = document.getElementById("result");
@@ -119,7 +129,7 @@
       const phone = decodedText.match(/الهاتف:\s*(.+)/)?.[1] || "";
       const email = decodedText.match(/الإيميل:\s*(.+)/)?.[1] || "";
 
-      sendToGoogleSheet(name.trim(), level.trim(), phone.trim(), email.trim());
+      sendToGoogleForm(name.trim(), level.trim(), phone.trim(), email.trim());
       stopScanner();
     }
 

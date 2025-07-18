@@ -84,13 +84,18 @@
   alert("✅ تم الحفظ بنجاح!");
 
   <h2>🧾 إنشاء كود QR جديد</h2>
-  <input type="text" id="name" placeholder="الاسم واللقب">
-  <input type="text" id="level" placeholder="المستوى الدراسي">
-  <input type="text" id="phone" placeholder="رقم الهاتف">
-  <input type="email" id="email" placeholder="البريد الإلكتروني">
-  <button onclick="generateQRCode()">⚙️ إنشاء</button>
-  <div id="qrcode"></div>
-  <button onclick="sendEmail()">📤 إرسال الكود عبر البريد</button>  
+function onScanSuccess(decodedText, decodedResult) {
+  document.getElementById("result").value = decodedText;
+
+  const name = decodedText.match(/الاسم:\s*(.+)/)?.[1] || "";
+  const level = decodedText.match(/المستوى الدراسي:\s*(.+)/)?.[1] || "";
+  const phone = decodedText.match(/الهاتف:\s*(.+)/)?.[1] || "";
+  const email = decodedText.match(/الإيميل:\s*(.+)/)?.[1] || "";
+
+  sendToGoogleSheet(name.trim(), level.trim(), phone.trim(), email.trim());
+  stopScanner();
+}
+ 
 
   <script>
     let scanner;

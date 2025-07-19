@@ -45,6 +45,15 @@
       cursor: pointer;
       font-size: 16px;
     }
+
+    @media (max-width: 600px) {
+      #reader {
+        width: 90%;
+      }
+      #export-btn {
+        width: 100%;
+      }
+    }
   </style>
 </head>
 <body>
@@ -59,22 +68,24 @@
   <audio id="success-sound" src="https://cdn.pixabay.com/audio/2022/03/15/audio_5f52f8149d.mp3"></audio>
 
   <script>
-    const scriptURL = "https://script.google.com/macros/s/AKfycbzMAPvx7gWpkn35baxB7nCd5c3sFyrmzsacdaoyln5dj04rCE_cLGG2JQ8h_532oXtGuQ/exec";
+    const scriptURL = "https://script.google.com/macros/s/AKfycbxxGc446FLQGWGIn8CDRkuIS3_K2Jp6rioFjz1ngKD2QZrL-w_6sKAcSC76eHk0av9pSA/exec";
     const scannedToday = new Set();
     const counter = document.getElementById("counter");
     const resultDiv = document.getElementById("result");
     const successSound = document.getElementById("success-sound");
+
+    let scanningPaused = false;
 
     function updateCounter() {
       counter.textContent = scannedToday.size;
     }
 
     function handleScan(name) {
+      if (scanningPaused) return;
+      scanningPaused = true;
+      setTimeout(() => scanningPaused = false, 3000); // توقيف مؤقت 3 ثوانٍ
+
       name = name.trim();
-      if (scannedToday.has(name)) {
-        resultDiv.innerHTML = `<p class="error">⛔ تم تسجيل الحضور مسبقًا لهذا الاسم اليوم</p>`;
-        return;
-      }
 
       fetch(scriptURL, {
         method: 'POST',

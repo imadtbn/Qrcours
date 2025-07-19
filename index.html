@@ -6,12 +6,45 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   <style>
-    body { font-family: 'Cairo', sans-serif; background: #f5f5f5; text-align: center; padding: 20px; }
-    #reader { width: 300px; margin: auto; }
-    .success { color: green; font-weight: bold; margin-top: 10px; }
-    .error { color: red; font-weight: bold; margin-top: 10px; }
-    #counter-box { margin-top: 20px; font-size: 18px; background: #fff; padding: 10px 20px; border-radius: 10px; display: inline-block; box-shadow: 0 0 5px #ccc; }
-    #export-btn { margin-top: 20px; background: #006233; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 16px; }
+    body {
+      font-family: 'Cairo', sans-serif;
+      background: #f2f2f2;
+      text-align: center;
+      padding: 20px;
+    }
+    #reader {
+      width: 300px;
+      margin: auto;
+    }
+    .success {
+      color: green;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+    .error {
+      color: red;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+    #counter-box {
+      margin-top: 20px;
+      font-size: 18px;
+      background: #fff;
+      padding: 10px 20px;
+      border-radius: 10px;
+      display: inline-block;
+      box-shadow: 0 0 5px #ccc;
+    }
+    #export-btn {
+      margin-top: 20px;
+      background: #006233;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+    }
   </style>
 </head>
 <body>
@@ -20,14 +53,13 @@
   <div id="result"></div>
 
   <div id="counter-box">📊 عدد الحضور اليوم: <span id="counter">0</span></div><br>
-
   <button id="export-btn">📤 تصدير الحضور اليوم</button>
 
   <!-- صوت النجاح -->
   <audio id="success-sound" src="https://cdn.pixabay.com/audio/2022/03/15/audio_5f52f8149d.mp3"></audio>
 
   <script>
-    const scriptURL = "https://script.google.com/macros/s/AKfycbx3Ql2lZE-cbUrAgpf1Jix6iG4lqlEKo2jtM7JIJWoIXpbomX0b82EFDBRG3FM7J-Oe6Q/exec";
+    const scriptURL = "https://script.google.com/macros/s/AKfycbzMAPvx7gWpkn35baxB7nCd5c3sFyrmzsacdaoyln5dj04rCE_cLGG2JQ8h_532oXtGuQ/exec";
     const scannedToday = new Set();
     const counter = document.getElementById("counter");
     const resultDiv = document.getElementById("result");
@@ -38,6 +70,7 @@
     }
 
     function handleScan(name) {
+      name = name.trim();
       if (scannedToday.has(name)) {
         resultDiv.innerHTML = `<p class="error">⛔ تم تسجيل الحضور مسبقًا لهذا الاسم اليوم</p>`;
         return;
@@ -49,13 +82,13 @@
       })
       .then(res => res.text())
       .then(txt => {
-        if (txt.includes("تم")) {
+        if (txt.includes("✅")) {
           scannedToday.add(name);
           updateCounter();
-          resultDiv.innerHTML = `<p class="success">✅ ${txt}</p>`;
+          resultDiv.innerHTML = `<p class="success">${txt}</p>`;
           successSound.play();
         } else {
-          resultDiv.innerHTML = `<p class="error">⚠️ ${txt}</p>`;
+          resultDiv.innerHTML = `<p class="error">${txt}</p>`;
         }
       })
       .catch(() => {
@@ -66,11 +99,10 @@
     new Html5Qrcode("reader").start(
       { facingMode: "environment" },
       { fps: 10, qrbox: 250 },
-      (decodedText) => handleScan(decodedText.trim()),
+      (decodedText) => handleScan(decodedText),
       (errorMessage) => {}
     );
 
-    // زر التصدير
     document.getElementById("export-btn").addEventListener("click", () => {
       if (scannedToday.size === 0) {
         alert("لم يتم تسجيل أي حضور بعد.");

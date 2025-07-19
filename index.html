@@ -2,164 +2,95 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <title>📘 أداة قراءة QR - تسجيل حضور</title>
+  <title>📘 تسجيل الحضور QR</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   <style>
-    body {
-      font-family: 'Cairo', sans-serif;
-      background-color: #e6f2ec;
-      padding: 20px;
-      color: #004d26;
-    }
-    h1, h2 {
-      text-align: center;
-      color: #006633;
-    }
-    #reader {
-      width: 100%;
-      max-width: 400px;
-      margin: auto;
-      border: 2px solid #00994d;
-      border-radius: 8px;
-      overflow: hidden;
-    }
-    textarea, button {
-      width: 100%;
-      margin: 10px auto;
-      padding: 10px;
-      font-size: 16px;
-      border-radius: 6px;
-      box-sizing: border-box;
-    }
-    button {
-      background-color: #00994d;
-      color: white;
-      border: none;
-      cursor: pointer;
-    }
-    button:hover {
-      background-color: #007a3d;
-    }
-    .controls {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 5px;
-      justify-content: center;
-      margin-bottom: 15px;
-    }
-    .controls button {
-      flex: 1 1 calc(33.33% - 10px);
-      min-width: 90px;
-      font-size: 14px;
-      padding: 8px;
-    }
-    #attendance-today {
-      text-align: center;
-      font-size: 20px;
-      color: #006633;
-      margin-top: 15px;
-    }
+    body { font-family: 'Cairo', sans-serif; background: #f5f5f5; text-align: center; padding: 20px; }
+    #reader { width: 300px; margin: auto; }
+    .success { color: green; font-weight: bold; margin-top: 10px; }
+    .error { color: red; font-weight: bold; margin-top: 10px; }
+    #counter-box { margin-top: 20px; font-size: 18px; background: #fff; padding: 10px 20px; border-radius: 10px; display: inline-block; box-shadow: 0 0 5px #ccc; }
+    #export-btn { margin-top: 20px; background: #006233; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 16px; }
   </style>
 </head>
 <body>
-  <h1>📘 نظام تسجيل الحضور عبر QR</h1>
-
-  <!-- 📷 قسم الماسح -->
+  <h2>📸 مسح QR لتسجيل الحضور</h2>
   <div id="reader"></div>
-  <div class="controls">
-    <button onclick="startScanner()">📷 فتح الكاميرا</button>
-    <button onclick="stopScanner()">✖️ غلق الكاميرا</button>
-    <button onclick="restartScanner()">🔄 إعادة المسح</button>
-  </div>
+  <div id="result"></div>
 
-  <textarea id="result" rows="4" placeholder="نتيجة المسح..." readonly></textarea>
+  <div id="counter-box">📊 عدد الحضور اليوم: <span id="counter">0</span></div><br>
 
-  <!-- 🔢 واجهة عدد الحضور -->
-  <div id="attendance-today">
-    📊 عدد الحضور اليوم: <span id="todayCount">0</span>
-  </div>
+  <button id="export-btn">📤 تصدير الحضور اليوم</button>
+
+  <!-- صوت النجاح -->
+  <audio id="success-sound" src="https://cdn.pixabay.com/audio/2022/03/15/audio_5f52f8149d.mp3"></audio>
 
   <script>
-    let scanner;
+    const scriptURL = "https://script.google.com/macros/s/AKfycbwdhLLzd5I1dD08X-pg7Lr6sNdGro9fbPYj1SSVvOBY06GUAYkMfscb97JNGD1IJwpLPA/exec";
+    const scannedToday = new Set();
+    const counter = document.getElementById("counter");
+    const resultDiv = document.getElementById("result");
+    const successSound = document.getElementById("success-sound");
 
-    function sendToGoogleForm(name, level, subject, phone, email) {
-      const now = new Date().toLocaleString('ar-DZ'); // توقيت الجزائر
-      const formUrl = "https://docs.google.com/forms/d/e/1FAIpQLSeixbPbHA_0xWyZtBgGOEpvmKImPH-Uw-3A0k0etENweF2IuA/formResponse?";
-      const params = new URLSearchParams({
-        "entry.791131319": name,
-        "entry.1205505594": level,
-        "entry.446566530": subject,
-        "entry.471706008": phone,
-        "entry.1817768015": email,
-        "entry.1564828744": now // 🕒 الوقت
-      });
-
-      fetch(formUrl + params.toString(), {
-        method: "POST",
-        mode: "no-cors"
-      }).then(() => console.log("✅ تم الإرسال إلى Google Form"))
-        .catch(err => console.error("❌ فشل الإرسال", err));
+    function updateCounter() {
+      counter.textContent = scannedToday.size;
     }
 
-    function incrementTodayAttendance(name) {
-      const today = new Date().toLocaleDateString('ar-DZ');
-      const key = `attendance-${today}`;
-      let count = parseInt(localStorage.getItem(key) || "0");
-      count++;
-      localStorage.setItem(key, count);
-      document.getElementById("todayCount").textContent = count;
-
-      // إشعار صوتي ومرئي
-      const sound = new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_c7735c3e3e.mp3");
-      sound.play();
-      alert(`✅ تم تسجيل الحضور لـ ${name}`);
-    }
-
-    function loadTodayCount() {
-      const today = new Date().toLocaleDateString('ar-DZ');
-      const key = `attendance-${today}`;
-      const count = parseInt(localStorage.getItem(key) || "0");
-      document.getElementById("todayCount").textContent = count;
-    }
-
-    function onScanSuccess(decodedText, decodedResult) {
-      const resultField = document.getElementById("result");
-      resultField.value = decodedText;
-
-      const name = decodedText.match(/الاسم:\s*(.+)/)?.[1] || "";
-      const level = decodedText.match(/المستوى الدراسي:\s*(.+)/)?.[1] || "";
-      const subject = decodedText.match(/المادة:\s*(.+)/)?.[1] || "";
-      const phone = decodedText.match(/الهاتف:\s*(.+)/)?.[1] || "";
-      const email = decodedText.match(/الإيميل:\s*(.+)/)?.[1] || "";
-
-      sendToGoogleForm(name.trim(), level.trim(), subject.trim(), phone.trim(), email.trim());
-      incrementTodayAttendance(name.trim());
-      stopScanner();
-    }
-
-    function startScanner() {
-      scanner = new Html5Qrcode("reader");
-      scanner.start(
-        { facingMode: "environment" },
-        { fps: 10, qrbox: 250 },
-        onScanSuccess,
-        error => {} // تجاهل الأخطاء
-      ).catch(err => console.error(err));
-    }
-
-    function stopScanner() {
-      if (scanner) {
-        scanner.stop().then(() => scanner.clear()).catch(err => console.error(err));
+    function handleScan(name) {
+      if (scannedToday.has(name)) {
+        resultDiv.innerHTML = `<p class="error">⛔ تم تسجيل الحضور مسبقًا لهذا الاسم اليوم</p>`;
+        return;
       }
+
+      fetch(scriptURL, {
+        method: 'POST',
+        body: new URLSearchParams({ "name": name })
+      })
+      .then(res => res.text())
+      .then(txt => {
+        if (txt.includes("تم")) {
+          scannedToday.add(name);
+          updateCounter();
+          resultDiv.innerHTML = `<p class="success">✅ ${txt}</p>`;
+          successSound.play();
+        } else {
+          resultDiv.innerHTML = `<p class="error">⚠️ ${txt}</p>`;
+        }
+      })
+      .catch(() => {
+        resultDiv.innerHTML = `<p class="error">📡 خطأ في الاتصال بالخادم</p>`;
+      });
     }
 
-    function restartScanner() {
-      stopScanner();
-      setTimeout(startScanner, 500);
-    }
+    new Html5Qrcode("reader").start(
+      { facingMode: "environment" },
+      { fps: 10, qrbox: 250 },
+      (decodedText) => handleScan(decodedText.trim()),
+      (errorMessage) => {}
+    );
 
-    window.onload = loadTodayCount;
+    // زر التصدير
+    document.getElementById("export-btn").addEventListener("click", () => {
+      if (scannedToday.size === 0) {
+        alert("لم يتم تسجيل أي حضور بعد.");
+        return;
+      }
+
+      const rows = [["الاسم", "التاريخ"]];
+      const today = new Date().toISOString().slice(0, 10);
+      scannedToday.forEach(name => rows.push([name, today]));
+
+      const csvContent = "data:text/csv;charset=utf-8," +
+        rows.map(e => e.join(",")).join("\n");
+
+      const link = document.createElement("a");
+      link.setAttribute("href", encodeURI(csvContent));
+      link.setAttribute("download", "الحضور_" + today + ".csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    });
   </script>
 </body>
 </html>

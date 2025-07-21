@@ -5,7 +5,6 @@
   <title>📘 أداة تسجيل وحضور QR</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- مكتبات خارجية -->
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -40,6 +39,13 @@
     }
     #form-section {
       display: none;
+      margin-top: 10px;
+    }
+    .button-group {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 10px;
       margin-top: 10px;
     }
     #qr-canvas, #reader {
@@ -78,12 +84,10 @@
 </head>
 <body>
 
-  <header>
-    الأستاذ محمد محمد - مادة الرياضيات
-  </header>
+  <header>الأستاذ محمد محمد - مادة الرياضيات</header>
 
-  <!-- زر بدء الإدخال -->
-  <button onclick="showForm()">➕ إنشاء الكود</button>
+  <!-- زر عرض/إخفاء النموذج -->
+  <button onclick="toggleForm()">➕ إنشاء الكود</button>
 
   <!-- نموذج الإدخال -->
   <div id="form-section">
@@ -92,15 +96,18 @@
     <input type="text" id="section" placeholder="الشعبة"><br>
     <input type="text" id="phone" placeholder="رقم الهاتف"><br>
     <input type="email" id="email" placeholder="البريد الإلكتروني"><br>
-    <button onclick="generateQR()">🎯 توليد الكود</button>
-    <button onclick="resetForm()">🔁 إنشاء جديد</button>
+    <!-- مجموعة الأزرار -->
+    <div class="button-group">
+      <button onclick="generateQR()">🎯 توليد الكود</button>
+      <button onclick="resetForm()">🔁 إنشاء جديد</button>
+      <button onclick="sendEmail()">✉️ إرسال بالبريد</button>
+    </div>
   </div>
 
   <!-- عرض الكود -->
   <div id="qr-canvas"></div>
   <div id="qr-actions" style="display:none;">
     <button onclick="saveQR()">💾 حفظ الكود</button>
-    <button onclick="sendEmail()">✉️ إرسال بالبريد</button>
   </div>
 
   <!-- قارئ QR -->
@@ -117,7 +124,7 @@
     <ul id="names-list"></ul>
   </div>
 
-  <!-- أدوات الكاميرا والتقرير -->
+  <!-- أدوات إضافية -->
   <div style="margin-top: 20px;">
     <button id="start-btn">🎥 تشغيل الكاميرا</button>
     <button id="stop-btn" style="display:none;">🛑 إيقاف الكاميرا</button>
@@ -137,8 +144,9 @@
     const successSound = document.getElementById("success-sound");
     let qrScanner;
 
-    function showForm() {
-      document.getElementById("form-section").style.display = "block";
+    function toggleForm() {
+      const form = document.getElementById("form-section");
+      form.style.display = form.style.display === "none" ? "block" : "none";
     }
 
     function resetForm() {
@@ -193,7 +201,6 @@
       window.location.href = `mailto:${email}?subject=بيانات الطالب&body=${body}`;
     }
 
-    // تشغيل الكاميرا
     document.getElementById("start-btn").addEventListener("click", () => {
       Html5Qrcode.getCameras().then(devices => {
         if (devices && devices.length) {
@@ -244,7 +251,7 @@
       });
     }
 
-    async function generatePDF() {
+    function generatePDF() {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF();
       doc.setFont("Helvetica", "normal");

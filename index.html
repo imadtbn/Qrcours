@@ -4,24 +4,27 @@
   <meta charset="UTF-8">
   <title>📘 أداة تسجيل وحضور QR</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- مكتبات -->
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@500&display=swap" rel="stylesheet">
+
   <style>
     body {
       font-family: 'Cairo', sans-serif;
       background: #f4f7f9;
-      padding: 20px;
-      text-align: center;
+      padding: 0;
       margin: 0;
+      text-align: center;
     }
     header {
       background-color: #006233;
       color: white;
-      padding: 15px 0;
+      padding: 15px;
       font-size: 20px;
       font-weight: bold;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
     input, button {
       padding: 10px;
@@ -44,6 +47,9 @@
       margin-top: 10px;
       border-radius: 10px;
       background: #fff;
+      max-width: 90%;
+      margin-left: auto;
+      margin-right: auto;
     }
     #counter-box {
       margin-top: 20px;
@@ -57,14 +63,13 @@
 </head>
 <body>
 
-  <!-- ✅ العنوان العلوي -->
+  <!-- العنوان -->
   <header>
     الأستاذ محمد محمد - مادة الرياضيات
   </header>
 
+  <!-- واجهة التوليد -->
   <h2 style="margin-top: 20px;">📘 توليد وحضور عبر QR</h2>
-
-  <!-- نموذج البيانات -->
   <div>
     <input type="text" id="fullname" placeholder="الاسم الكامل"><br>
     <input type="text" id="level" placeholder="المستوى الدراسي"><br>
@@ -76,18 +81,22 @@
     <button onclick="sendEmail()">✉️ إرسال بالبريد</button>
   </div>
 
-  <!-- عرض الكود -->
   <div id="qr-canvas"></div>
 
-  <!-- قارئ QR -->
+  <!-- القارئ -->
   <h3>📸 امسح رمز QR لتسجيل الحضور</h3>
   <div id="reader" style="width: 300px;"></div>
 
-  <!-- نتيجة المسح -->
   <div id="result">⚙️ بانتظار المسح...</div>
 
-  <!-- عدد الحضور -->
   <div id="counter-box">📊 عدد الحضور اليوم: <span id="counter">0</span></div>
+
+  <!-- أزرار الكاميرا والتقرير -->
+  <div style="margin-top: 20px;">
+    <button id="start-btn">🎥 تشغيل الكاميرا</button>
+    <button id="stop-btn" style="display:none;">🛑 إيقاف الكاميرا</button>
+    <button onclick="generatePDF()">📄 إنشاء تقرير PDF</button>
+  </div>
 
   <!-- صوت النجاح -->
   <audio id="success-sound" src="https://cdn.pixabay.com/audio/2022/03/15/audio_5f52f8149d.mp3"></audio>
@@ -99,7 +108,9 @@
     const resultDiv = document.getElementById("result");
     const qrCanvas = document.getElementById("qr-canvas");
     const successSound = document.getElementById("success-sound");
+    let qrScanner;
 
+    // توليد الكود
     function generateQR() {
       const name = document.getElementById("fullname").value.trim();
       const level = document.getElementById("level").value.trim();
@@ -107,13 +118,12 @@
       const phone = document.getElementById("phone").value.trim();
       const email = document.getElementById("email").value.trim();
 
-      const content = `الاسم: ${name}\nالمستوى: ${level}\nالشعبة: ${section}\nالهاتف: ${phone}\nالإيميل: ${email}`;
-
       if (!name || !level || !section || !phone || !email) {
         alert("يرجى ملء جميع الحقول");
         return;
       }
 
+      const content = `الاسم: ${name}\nالمستوى: ${level}\nالشعبة: ${section}\nالهاتف: ${phone}\nالإيميل: ${email}`;
       qrCanvas.innerHTML = "";
       QRCode.toCanvas(document.createElement('canvas'), content, function (error, canvas) {
         if (error) console.error(error);
@@ -121,6 +131,7 @@
       });
     }
 
+    // حفظ الكود
     function saveQR() {
       const canvas = qrCanvas.querySelector("canvas");
       if (!canvas) return alert("الرجاء توليد الكود أولاً.");
@@ -131,31 +142,52 @@
       link.click();
     }
 
+    // إرسال بالإيميل
     function sendEmail() {
       const name = document.getElementById("fullname").value.trim();
       const level = document.getElementById("level").value.trim();
       const section = document.getElementById("section").value.trim();
       const phone = document.getElementById("phone").value.trim();
       const email = document.getElementById("email").value.trim();
-
       const body = `الاسم الكامل: ${name}%0Aالمستوى: ${level}%0Aالشعبة: ${section}%0Aرقم الهاتف: ${phone}%0Aالإيميل: ${email}`;
       window.location.href = `mailto:${email}?subject=بيانات الطالب&body=${body}`;
     }
 
-    // بدء الكاميرا لمسح الكود
-    new Html5Qrcode("reader").start(
-      { facingMode: "environment" },
-      { fps: 10, qrbox: 250 },
-      (decodedText) => handleScan(decodedText),
-      (errorMessage) => {}
-    );
+    // تشغيل الكاميرا
+    document.getElementById("start-btn").addEventListener("click", () => {
+      Html5Qrcode.getCameras().then(devices => {
+        if (devices && devices.length) {
+          qrScanner = new Html5Qrcode("reader");
+          qrScanner.start(
+            { facingMode: "environment" },
+            { fps: 10, qrbox: 250 },
+            (decodedText) => handleScan(decodedText),
+            (errorMessage) => {}
+          );
+          document.getElementById("start-btn").style.display = "none";
+          document.getElementById("stop-btn").style.display = "inline-block";
+        }
+      });
+    });
 
+    // إيقاف الكاميرا
+    document.getElementById("stop-btn").addEventListener("click", () => {
+      if (qrScanner) {
+        qrScanner.stop().then(() => {
+          qrScanner.clear();
+          document.getElementById("reader").innerHTML = "";
+          document.getElementById("start-btn").style.display = "inline-block";
+          document.getElementById("stop-btn").style.display = "none";
+        });
+      }
+    });
+
+    // عند المسح
     function handleScan(text) {
       if (scannedToday.has(text)) {
         resultDiv.innerHTML = `<p style="color:orange;">🔁 تم مسح هذا الكود من قبل</p>`;
         return;
       }
-
       scannedToday.add(text);
       counter.textContent = scannedToday.size;
       resultDiv.innerHTML = `<pre style="text-align:right;">${text}</pre>`;
@@ -172,6 +204,37 @@
       .then(res => res.text())
       .then(txt => console.log("تم الإرسال إلى Google Sheets:", txt))
       .catch(() => console.log("فشل الاتصال بـ Google Sheets"));
+    }
+
+    // توليد تقرير PDF
+    function generatePDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      let y = 20;
+      doc.setFont("Cairo", "bold");
+      doc.setFontSize(16);
+      doc.text("📘 تقرير الحضور", 105, y, { align: "center" });
+      y += 10;
+
+      const today = new Date().toLocaleDateString();
+      doc.setFontSize(12);
+      doc.text(`📅 التاريخ: ${today}`, 14, y);
+      y += 10;
+
+      doc.text(`📊 عدد الحضور: ${scannedToday.size}`, 14, y);
+      y += 10;
+
+      let index = 1;
+      scannedToday.forEach(name => {
+        doc.text(`${index++}. ${name}`, 14, y);
+        y += 8;
+        if (y > 270) {
+          doc.addPage();
+          y = 20;
+        }
+      });
+
+      doc.save(`تقرير_الحضور_${today}.pdf`);
     }
   </script>
 </body>

@@ -61,6 +61,11 @@
       margin: auto;
       box-shadow: 0 2px 6px rgba(0,0,0,0.1);
     }
+    #scan-message {
+      margin-top: 10px;
+      font-size: 18px;
+      color: #333;
+    }
   </style>
 </head>
 <body>
@@ -92,6 +97,7 @@
   <h3>📸 تشغيل / إيقاف الكاميرا</h3>
   <button id="toggle-camera-btn" onclick="toggleCamera()">🎥 فتح الكاميرا</button>
   <div id="reader" style="width:300px;"></div>
+  <div id="scan-message">⚙️ في انتظار المسح...</div>
 
   <audio id="success-sound" src="https://cdn.pixabay.com/audio/2022/03/15/audio_5f52f8149d.mp3"></audio>
 
@@ -176,13 +182,14 @@
         },
         (decodedText) => {
           const today = new Date().toLocaleDateString();
+          const messageDiv = document.getElementById("scan-message");
           if (scannedToday.has(decodedText + today)) {
-            alert("⚠️ تم مسح هذا الكود بالفعل اليوم.");
+            messageDiv.innerHTML = "⚠️ تم مسح هذا الكود بالفعل اليوم.";
             return;
           }
           scannedToday.add(decodedText + today);
           document.getElementById("success-sound").play();
-          alert("✅ تم مسح الكود:\n\n" + decodedText);
+          messageDiv.innerHTML = "✅ تم المسح بنجاح:<br>" + decodedText.replace(/\n/g, "<br>");
 
           // إرسال إلى Google Sheets
           fetch("https://script.google.com/macros/s/YOUR_SCRIPT_ID_HERE/exec", {

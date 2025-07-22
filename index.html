@@ -7,9 +7,7 @@
 
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@500&display=swap" rel="stylesheet">
-
   <style>
     body {
       font-family: 'Cairo', sans-serif;
@@ -23,173 +21,138 @@
       padding: 15px;
       font-size: 20px;
       font-weight: bold;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
     }
-    #reader {
-      margin: 20px auto;
-      width: 320px;
-      max-width: 90%;
+    header img {
+      width: 30px;
+      height: 30px;
     }
-    #result, #counter-box {
-      margin-top: 15px;
-    }
-    table {
-      margin: 20px auto;
-      border-collapse: collapse;
-      width: 95%;
-      background: #fff;
-    }
-    th, td {
+    input, button {
+      padding: 10px;
+      margin: 5px;
+      border-radius: 8px;
       border: 1px solid #ccc;
-      padding: 8px;
-    }
-    th {
-      background-color: #e0f2f1;
+      font-family: 'Cairo';
     }
     button {
       background-color: #006233;
       color: white;
-      padding: 10px 20px;
-      border-radius: 8px;
-      border: none;
       cursor: pointer;
-      margin: 10px 5px;
-      font-family: 'Cairo';
+    }
+    #qr-canvas, #reader {
+      margin: 20px auto;
     }
   </style>
 </head>
 <body>
 
-  <header>📘 الأستاذ محمد محمد - مادة الرياضيات</header>
+  <!-- رأس الصفحة -->
+  <header>
+    <img src="https://img.icons8.com/external-flat-juicy-fish/60/external-teacher-back-to-school-flat-flat-juicy-fish.png" alt="أستاذ">
+    <img src="https://img.icons8.com/external-flat-juicy-fish/60/external-blackboard-back-to-school-flat-flat-juicy-fish.png" alt="صبورة">
+    الأستاذ محمد محمد - مادة الرياضيات
+  </header>
 
-  <h3>📸 امسح رمز QR لتسجيل الحضور</h3>
-  <div id="reader"></div>
-  <div id="result">⚙️ بانتظار المسح...</div>
+  <!-- مدخلات توليد الكود -->
+  <h3>✏️ أدخل بياناتك لتوليد الكود</h3>
+  <input type="text" id="fullname" placeholder="الاسم الكامل"><br>
+  <input type="text" id="level" placeholder="المستوى الدراسي"><br>
+  <input type="text" id="section" placeholder="الشعبة"><br>
+  <input type="text" id="phone" placeholder="رقم الهاتف"><br>
+  <input type="email" id="email" placeholder="البريد الإلكتروني"><br>
 
-  <div id="counter-box">📊 عدد الحضور: <span id="counter">0</span></div>
+  <div style="margin: 10px;">
+    <button onclick="generateQR()">🎯 توليد الكود</button>
+    <button onclick="saveQR()">💾 حفظ الكود</button>
+    <button onclick="sendEmail()">✉️ إرسال بالبريد</button>
+  </div>
 
-  <h4>📋 قائمة الحضور اليوم:</h4>
-  <table id="attendance-table">
-    <thead>
-      <tr>
-        <th>الاسم الكامل</th>
-        <th>المستوى</th>
-        <th>الشعبة</th>
-        <th>الهاتف</th>
-        <th>البريد</th>
-        <th>التاريخ</th>
-      </tr>
-    </thead>
-    <tbody id="attendance-body"></tbody>
-  </table>
+  <!-- عرض الكود -->
+  <div id="qr-canvas"></div>
 
-  <button onclick="generatePDF()">📄 إنشاء تقرير PDF</button>
+  <!-- الكاميرا -->
+  <h3>📸 تشغيل / إيقاف الكاميرا</h3>
+  <button onclick="startCamera()">🎥 فتح الكاميرا</button>
+  <button onclick="stopCamera()">🛑 غلق الكاميرا</button>
+  <div id="reader" style="width:300px;"></div>
 
   <audio id="success-sound" src="https://cdn.pixabay.com/audio/2022/03/15/audio_5f52f8149d.mp3"></audio>
 
   <script>
-    const scriptURL = "https://script.google.com/macros/s/AKfycbwqnXYiOKoQaYpwFCt7TbgI6wvpLwzwe8eWjJgW8UEs_Ei7l1LV38nW9p5lKawIukec/exec"; // 👈 عدل هذا
-    const scannedToday = new Set();
-    const tableBody = document.getElementById("attendance-body");
-    const counter = document.getElementById("counter");
-    const resultDiv = document.getElementById("result");
-    const successSound = document.getElementById("success-sound");
+    let qrScanner;
+    const qrCanvas = document.getElementById("qr-canvas");
 
-    function parseQRData(text) {
-      const lines = text.split("\n");
-      const data = {};
-      lines.forEach(line => {
-        const [key, value] = line.split(":");
-        if (key && value) data[key.trim()] = value.trim();
-      });
-      return data;
-    }
+    function generateQR() {
+      const name = document.getElementById("fullname").value.trim();
+      const level = document.getElementById("level").value.trim();
+      const section = document.getElementById("section").value.trim();
+      const phone = document.getElementById("phone").value.trim();
+      const email = document.getElementById("email").value.trim();
 
-    function handleScan(text) {
-      if (scannedToday.has(text)) {
-        resultDiv.innerHTML = "<span style='color:orange;'>🔁 تم تسجيل هذا الشخص مسبقًا.</span>";
+      if (!name || !level || !section || !phone || !email) {
+        alert("يرجى ملء جميع الحقول.");
         return;
       }
 
-      const data = parseQRData(text);
-      const today = new Date().toLocaleDateString();
-
-      if (!data["الاسم"] || !data["المستوى"] || !data["الشعبة"]) {
-        resultDiv.innerHTML = "<span style='color:red;'>⚠️ تنسيق غير صحيح في الكود</span>";
-        return;
-      }
-
-      scannedToday.add(text);
-      counter.textContent = scannedToday.size;
-      resultDiv.innerHTML = `<span style='color:green;'>✅ تم تسجيل: ${data["الاسم"]}</span>`;
-      successSound.play();
-
-      const row = document.createElement("tr");
-      row.innerHTML = `
-        <td>${data["الاسم"] || ""}</td>
-        <td>${data["المستوى"] || ""}</td>
-        <td>${data["الشعبة"] || ""}</td>
-        <td>${data["الهاتف"] || ""}</td>
-        <td>${data["الإيميل"] || ""}</td>
-        <td>${today}</td>
-      `;
-      tableBody.appendChild(row);
-
-      fetch(scriptURL, {
-        method: 'POST',
-        body: new URLSearchParams({
-          "name": data["الاسم"],
-          "level": data["المستوى"],
-          "section": data["الشعبة"],
-          "phone": data["الهاتف"],
-          "email": data["الإيميل"],
-          "date": today
-        })
+      const content = `الاسم: ${name}\nالمستوى: ${level}\nالشعبة: ${section}\nالهاتف: ${phone}\nالإيميل: ${email}`;
+      qrCanvas.innerHTML = "";
+      QRCode.toCanvas(document.createElement('canvas'), content, function (error, canvas) {
+        if (!error) qrCanvas.appendChild(canvas);
       });
     }
 
-    // إعداد الكاميرا مع تأثيرات
-    const html5QrCode = new Html5Qrcode("reader");
-    html5QrCode.start(
-      { facingMode: "environment" },
-      {
-        fps: 10,
-        qrbox: { width: 250, height: 250 },
-        highlightScanRegion: true,
-        highlightCodeOutline: true
-      },
-      (decodedText) => handleScan(decodedText),
-      (errorMessage) => {}
-    );
+    function saveQR() {
+      const canvas = qrCanvas.querySelector("canvas");
+      if (!canvas) return alert("الرجاء توليد الكود أولاً.");
+      const name = document.getElementById("fullname").value.trim();
+      const link = document.createElement("a");
+      link.download = name + ".png";
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    }
 
-    function generatePDF() {
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
-      const today = new Date().toLocaleDateString("ar-EG");
+    function sendEmail() {
+      const name = document.getElementById("fullname").value.trim();
+      const level = document.getElementById("level").value.trim();
+      const section = document.getElementById("section").value.trim();
+      const phone = document.getElementById("phone").value.trim();
+      const email = document.getElementById("email").value.trim();
 
-      doc.setFontSize(16);
-      doc.text("📘 تقرير الحضور", 105, 15, { align: "center" });
-      doc.setFontSize(12);
-      doc.text(`📅 التاريخ: ${today}`, 14, 25);
+      const body = `الاسم الكامل: ${name}%0Aالمستوى: ${level}%0Aالشعبة: ${section}%0Aالهاتف: ${phone}%0Aالبريد الإلكتروني: ${email}`;
+      window.location.href = `mailto:${email}?subject=بيانات الطالب&body=${body}`;
+    }
 
-      const headers = ["الاسم", "المستوى", "الشعبة", "الهاتف", "البريد", "التاريخ"];
-      const data = Array.from(document.querySelectorAll("#attendance-body tr")).map(tr =>
-        Array.from(tr.children).map(td => td.textContent)
+    function startCamera() {
+      if (qrScanner) return;
+
+      qrScanner = new Html5Qrcode("reader");
+      qrScanner.start(
+        { facingMode: "environment" },
+        {
+          fps: 10,
+          qrbox: { width: 250, height: 250 },
+          highlightScanRegion: true,
+          highlightCodeOutline: true
+        },
+        (decodedText) => {
+          document.getElementById("success-sound").play();
+          alert("✅ تم مسح الكود:\n\n" + decodedText);
+        },
+        (errorMessage) => {}
       );
+    }
 
-      let y = 35;
-      headers.forEach((h, i) => doc.text(h, 15 + i * 30, y));
-      y += 10;
-
-      data.forEach(row => {
-        row.forEach((cell, i) => doc.text(cell, 15 + i * 30, y));
-        y += 10;
-        if (y > 270) {
-          doc.addPage();
-          y = 20;
-        }
-      });
-
-      doc.save(`تقرير_الحضور_${today}.pdf`);
+    function stopCamera() {
+      if (qrScanner) {
+        qrScanner.stop().then(() => {
+          qrScanner.clear();
+          qrScanner = null;
+          document.getElementById("reader").innerHTML = "";
+        });
+      }
     }
   </script>
 </body>

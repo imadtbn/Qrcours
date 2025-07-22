@@ -98,11 +98,6 @@
   <div id="reader" style="width:300px;"></div>
   <div id="scan-message">⚙️ في انتظار المسح...</div>
   
-<!-- ✅ عرض مباشر لجدول Google Sheets -->
-<iframe src="https://docs.google.com/spreadsheets/d/e/2PACX-1vRIjkmupJuj0oZrUEun8VgTCCyxVeGHBRJZ4A2LIjb5YAEjfWDSmrd0txeeW5xAX8uyCK2oGal26lLv/pubhtml?widget=true&amp;headers=false"
-        width="100%" height="400" style="border: 1px solid #ccc; border-radius: 8px; margin-top: 10px;">
-</iframe>
-
   <audio id="success-sound" src="https://cdn.pixabay.com/audio/2022/03/15/audio_5f52f8149d.mp3"></audio>
 
   <script>
@@ -196,10 +191,17 @@
           messageDiv.innerHTML = "✅ تم المسح بنجاح:<br>" + decodedText.replace(/\n/g, "<br>");
 
           // إرسال إلى Google Sheets
-          fetch("https://script.google.com/macros/s/AKfycbxUR-QKm-fMDaAv9BvbBNBiXKUAvbBv7Z9NxgN8UCXoyuM9W73MpYf1veAyoimW4pYXIw/exec", {
-            method: 'POST',
-            body: new URLSearchParams({ "qr": decodedText, "date": today })
-          });
+          fetch("https://script.google.com/macros/s/AKfycbxhmZLBZN1wjpRCRXtw4KBp17EEyLYD0rbmeSvEtq8WdlEG61aoR36Wj5BMZ5qBv7Jf8A/exec", {
+  method: 'POST',
+  body: new URLSearchParams({
+    name: data["الاسم"],
+    level: data["المستوى"],
+    section: data["الشعبة"],
+    phone: data["الهاتف"],
+    email: data["الإيميل"],
+    date: today
+  })
+});
         },
         (errorMessage) => {}
       );

@@ -86,8 +86,7 @@
   <button onclick="sendEmail()">✉️ إرسال بالبريد</button>
 </div>
 
-<h3>📸 تشغيل / إيقاف الكاميرا</h3>
-<button id="toggle-camera-btn" onclick="toggleCamera()">🎥 فتح الكاميرا</button>
+<!-- الكاميرا وقارئ QR -->
 <div id="reader" style="width:300px; margin:auto;"></div>
 <div id="scan-message">⚙️ في انتظار المسح...</div>
 
@@ -96,7 +95,7 @@
 <script>
   let qrScanner;
   let scannedToday = new Set();
-  let cameraActive = false;
+  let duplicateCount = 0;
 
   function toggleForm() {
     const form = document.getElementById("form-fields");
@@ -157,16 +156,7 @@
     document.getElementById("qr-actions").style.display = "none";
   }
 
-  function toggleCamera() {
-    if (cameraActive) {
-      stopCamera();
-    } else {
-      startCamera();
-    }
-  }
-
   function startCamera() {
-    if (qrScanner) return;
     qrScanner = new Html5Qrcode("reader");
     qrScanner.start(
       { facingMode: "environment" },
@@ -179,22 +169,24 @@
       (decodedText) => {
         const today = new Date().toLocaleDateString();
         const messageDiv = document.getElementById("scan-message");
+
         if (scannedToday.has(decodedText + today)) {
-          messageDiv.innerHTML = "⚠️ تم مسح هذا الكود بالفعل اليوم.";
+          duplicateCount++;
+          messageDiv.innerHTML =
+            "⚠️ تم مسح هذا الكود بالفعل اليوم.<br>🚫 عدد المحاولات المكررة: " + duplicateCount;
           return;
         }
+
         scannedToday.add(decodedText + today);
         document.getElementById("success-sound").play();
         messageDiv.innerHTML = "✅ تم المسح بنجاح:<br>" + decodedText.replace(/\n/g, "<br>");
 
-        // استخراج البيانات من الكود
         const data = {};
         decodedText.split("\n").forEach(line => {
           const [key, value] = line.split(":");
           if (key && value) data[key.trim()] = value.trim();
         });
 
-        // إرسال البيانات إلى Google Sheets
         fetch("https://script.google.com/macros/s/AKfycbxhmZLBZN1wjpRCRXtw4KBp17EEyLYD0rbmeSvEtq8WdlEG61aoR36Wj5BMZ5qBv7Jf8A/exec", {
           method: 'POST',
           body: new URLSearchParams({
@@ -209,21 +201,10 @@
       },
       (errorMessage) => {}
     );
-    cameraActive = true;
-    document.getElementById("toggle-camera-btn").textContent = "🛑 غلق الكاميرا";
   }
 
-  function stopCamera() {
-    if (qrScanner) {
-      qrScanner.stop().then(() => {
-        qrScanner.clear();
-        qrScanner = null;
-        cameraActive = false;
-        document.getElementById("reader").innerHTML = "";
-        document.getElementById("toggle-camera-btn").textContent = "🎥 فتح الكاميرا";
-      });
-    }
-  }
+  // تشغيل الكاميرا تلقائيًا عند فتح الصفحة
+  window.onload = startCamera;
 </script>
 
 </body>

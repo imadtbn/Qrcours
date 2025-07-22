@@ -196,7 +196,7 @@
           messageDiv.innerHTML = "✅ تم المسح بنجاح:<br>" + decodedText.replace(/\n/g, "<br>");
 
           // إرسال إلى Google Sheets
-          fetch("https://script.google.com/macros/s/YOUR_SCRIPT_ID_HERE/exec", {
+          fetch("https://script.google.com/macros/s/AKfycbxUR-QKm-fMDaAv9BvbBNBiXKUAvbBv7Z9NxgN8UCXoyuM9W73MpYf1veAyoimW4pYXIw/exec", {
             method: 'POST',
             body: new URLSearchParams({ "qr": decodedText, "date": today })
           });

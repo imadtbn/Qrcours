@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <title>📘 تسجيل الحضور - الأستاذ محمد محمد</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@500&display=swap" rel="stylesheet">
@@ -45,29 +44,36 @@
     #qr-canvas, #reader {
       margin: 20px auto;
     }
+    #form-fields {
+      display: none;
+    }
   </style>
 </head>
 <body>
 
   <!-- رأس الصفحة -->
-  <header>
-    <img src="https://img.icons8.com/external-flat-juicy-fish/60/external-teacher-back-to-school-flat-flat-juicy-fish.png" alt="أستاذ">
-    <img src="https://img.icons8.com/external-flat-juicy-fish/60/external-blackboard-back-to-school-flat-flat-juicy-fish.png" alt="صبورة">
-    الأستاذ محمد محمد - مادة الرياضيات
-  </header>
+<header style="display: flex; align-items: center; gap: 10px; padding: 10px; background-color: #f0f0f0; font-size: 18px; font-weight: bold;" dir="rtl">
+  <img src="https://img.icons8.com/external-flat-juicy-fish/60/external-teacher-back-to-school-flat-flat-juicy-fish.png" alt="أستاذ" style="width: 40px; height: 40px;">
+  <img src="https://img.icons8.com/external-flat-juicy-fish/60/external-blackboard-back-to-school-flat-flat-juicy-fish.png" alt="صبورة" style="width: 40px; height: 40px;">
+  <span>الأستاذ محمد محمد - مادة الرياضيات</span>
+</header>
 
-  <!-- مدخلات توليد الكود -->
-  <h3>✏️ أدخل بياناتك لتوليد الكود</h3>
-  <input type="text" id="fullname" placeholder="الاسم الكامل"><br>
-  <input type="text" id="level" placeholder="المستوى الدراسي"><br>
-  <input type="text" id="section" placeholder="الشعبة"><br>
-  <input type="text" id="phone" placeholder="رقم الهاتف"><br>
-  <input type="email" id="email" placeholder="البريد الإلكتروني"><br>
 
-  <div style="margin: 10px;">
-    <button onclick="generateQR()">🎯 توليد الكود</button>
-    <button onclick="saveQR()">💾 حفظ الكود</button>
-    <button onclick="sendEmail()">✉️ إرسال بالبريد</button>
+  <!-- زر إظهار خانات الإدخال -->
+  <button onclick="toggleForm()">✏️ أدخل بياناتك لإنشاء الكود</button>
+
+  <!-- مدخلات إنشاء الكود -->
+  <div id="form-fields">
+    <input type="text" id="fullname" placeholder="الاسم الكامل"><br>
+    <input type="text" id="level" placeholder="المستوى الدراسي"><br>
+    <input type="text" id="section" placeholder="الشعبة"><br>
+    <input type="text" id="phone" placeholder="رقم الهاتف"><br>
+    <input type="email" id="email" placeholder="البريد الإلكتروني"><br>
+    <div style="margin: 10px;">
+      <button onclick="generateQR()">🚀 إنشاء الكود</button>
+      <button onclick="saveQR()">💾 حفظ</button>
+      <button onclick="sendEmail()">✉️ إرسال بالبريد</button>
+    </div>
   </div>
 
   <!-- عرض الكود -->
@@ -83,7 +89,13 @@
 
   <script>
     let qrScanner;
+    let scannedToday = new Set();
     const qrCanvas = document.getElementById("qr-canvas");
+
+    function toggleForm() {
+      const form = document.getElementById("form-fields");
+      form.style.display = form.style.display === "none" ? "block" : "none";
+    }
 
     function generateQR() {
       const name = document.getElementById("fullname").value.trim();
@@ -106,7 +118,7 @@
 
     function saveQR() {
       const canvas = qrCanvas.querySelector("canvas");
-      if (!canvas) return alert("الرجاء توليد الكود أولاً.");
+      if (!canvas) return alert("الرجاء إنشاء الكود أولاً.");
       const name = document.getElementById("fullname").value.trim();
       const link = document.createElement("a");
       link.download = name + ".png";
@@ -138,6 +150,12 @@
           highlightCodeOutline: true
         },
         (decodedText) => {
+          const today = new Date().toLocaleDateString();
+          if (scannedToday.has(decodedText + today)) {
+            alert("⚠️ تم مسح هذا الكود بالفعل اليوم.");
+            return;
+          }
+          scannedToday.add(decodedText + today);
           document.getElementById("success-sound").play();
           alert("✅ تم مسح الكود:\n\n" + decodedText);
         },

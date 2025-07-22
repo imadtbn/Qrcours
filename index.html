@@ -6,58 +6,67 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Amiri&display=swap" rel="stylesheet">
   <style>
     body {
-      font-family: 'Cairo', sans-serif;
-      background: #f4f7f9;
+      font-family: 'Amiri', serif;
+      background: #f9fbfc;
+      color: #222;
       padding: 20px;
       text-align: center;
     }
     header {
-      background-color: #006233;
+      background-color: #004d40;
       color: white;
       padding: 15px;
-      font-size: 20px;
+      font-size: 22px;
       font-weight: bold;
       display: flex;
       justify-content: center;
       align-items: center;
       gap: 10px;
+      border-radius: 8px;
     }
     header img {
-      width: 30px;
-      height: 30px;
+      width: 32px;
+      height: 32px;
     }
     input, button {
-      padding: 10px;
-      margin: 5px;
+      padding: 12px;
+      margin: 6px;
       border-radius: 8px;
       border: 1px solid #ccc;
-      font-family: 'Cairo';
+      font-family: 'Amiri', serif;
+      font-size: 16px;
     }
     button {
-      background-color: #006233;
+      background-color: #009688;
       color: white;
       cursor: pointer;
+    }
+    button:hover {
+      background-color: #00796b;
     }
     #qr-canvas, #reader {
       margin: 20px auto;
     }
     #form-fields {
       display: none;
+      background-color: #e0f2f1;
+      padding: 15px;
+      border-radius: 8px;
+      max-width: 400px;
+      margin: auto;
     }
   </style>
 </head>
 <body>
 
-  <!-- رأس الصفحة -->
-<header style="display: flex; align-items: center; gap: 10px; padding: 10px; background-color: #f0f0f0; font-size: 18px; font-weight: bold;" dir="rtl">
-  <img src="https://img.icons8.com/external-flat-juicy-fish/60/external-teacher-back-to-school-flat-flat-juicy-fish.png" alt="أستاذ" style="width: 40px; height: 40px;">
-  <img src="https://img.icons8.com/external-flat-juicy-fish/60/external-blackboard-back-to-school-flat-flat-juicy-fish.png" alt="صبورة" style="width: 40px; height: 40px;">
-  <span>الأستاذ محمد محمد - مادة الرياضيات</span>
-</header>
-
+  <header>
+    <img src="https://img.icons8.com/external-flat-juicy-fish/60/external-teacher-back-to-school-flat-flat-juicy-fish.png" alt="أستاذ">
+    <img src="https://img.icons8.com/external-flat-juicy-fish/60/external-blackboard-back-to-school-flat-flat-juicy-fish.png" alt="صبورة">
+    الأستاذ محمد محمد - مادة الرياضيات
+  </header>
 
   <!-- زر إظهار خانات الإدخال -->
   <button onclick="toggleForm()">✏️ أدخل بياناتك لإنشاء الكود</button>
@@ -69,7 +78,7 @@
     <input type="text" id="section" placeholder="الشعبة"><br>
     <input type="text" id="phone" placeholder="رقم الهاتف"><br>
     <input type="email" id="email" placeholder="البريد الإلكتروني"><br>
-    <div style="margin: 10px;">
+    <div>
       <button onclick="generateQR()">🚀 إنشاء الكود</button>
       <button onclick="saveQR()">💾 حفظ</button>
       <button onclick="sendEmail()">✉️ إرسال بالبريد</button>
@@ -79,10 +88,9 @@
   <!-- عرض الكود -->
   <div id="qr-canvas"></div>
 
-  <!-- الكاميرا -->
+  <!-- زر واحد للكاميرا -->
   <h3>📸 تشغيل / إيقاف الكاميرا</h3>
-  <button onclick="startCamera()">🎥 فتح الكاميرا</button>
-  <button onclick="stopCamera()">🛑 غلق الكاميرا</button>
+  <button id="toggle-camera-btn" onclick="toggleCamera()">🎥 فتح الكاميرا</button>
   <div id="reader" style="width:300px;"></div>
 
   <audio id="success-sound" src="https://cdn.pixabay.com/audio/2022/03/15/audio_5f52f8149d.mp3"></audio>
@@ -90,6 +98,7 @@
   <script>
     let qrScanner;
     let scannedToday = new Set();
+    let cameraActive = false;
     const qrCanvas = document.getElementById("qr-canvas");
 
     function toggleForm() {
@@ -137,9 +146,16 @@
       window.location.href = `mailto:${email}?subject=بيانات الطالب&body=${body}`;
     }
 
+    function toggleCamera() {
+      if (cameraActive) {
+        stopCamera();
+      } else {
+        startCamera();
+      }
+    }
+
     function startCamera() {
       if (qrScanner) return;
-
       qrScanner = new Html5Qrcode("reader");
       qrScanner.start(
         { facingMode: "environment" },
@@ -158,9 +174,17 @@
           scannedToday.add(decodedText + today);
           document.getElementById("success-sound").play();
           alert("✅ تم مسح الكود:\n\n" + decodedText);
+
+          // إرسال إلى Google Sheets
+          fetch("https://script.google.com/macros/s/YOUR_SCRIPT_ID_HERE/exec", {
+            method: 'POST',
+            body: new URLSearchParams({ "qr": decodedText, "date": today })
+          });
         },
         (errorMessage) => {}
       );
+      cameraActive = true;
+      document.getElementById("toggle-camera-btn").textContent = "🛑 غلق الكاميرا";
     }
 
     function stopCamera() {
@@ -168,7 +192,9 @@
         qrScanner.stop().then(() => {
           qrScanner.clear();
           qrScanner = null;
+          cameraActive = false;
           document.getElementById("reader").innerHTML = "";
+          document.getElementById("toggle-camera-btn").textContent = "🎥 فتح الكاميرا";
         });
       }
     }

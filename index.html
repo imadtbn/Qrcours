@@ -84,7 +84,7 @@
 </head>
 <body>
 
-  <header>الأستاذ محمد محمد - مادة الرياضيات</header>
+  <header>الأستاذ: صلاح سيف الله - مادة الرياضيات</header>
 
   <!-- زر عرض/إخفاء النموذج -->
   <button onclick="toggleForm()">➕ إنشاء الكود</button>
@@ -98,7 +98,7 @@
     <input type="email" id="email" placeholder="البريد الإلكتروني"><br>
     <!-- مجموعة الأزرار -->
     <div class="button-group">
-      <button onclick="generateQR()">🎯 توليد الكود</button>
+      <button onclick="generateQR()">🎯 الكود</button>
       <button onclick="resetForm()">🔁 إنشاء جديد</button>
       <button onclick="sendEmail()">✉️ إرسال بالبريد</button>
     </div>
@@ -183,7 +183,7 @@
 
     function saveQR() {
       const canvas = qrCanvas.querySelector("canvas");
-      if (!canvas) return alert("الرجاء توليد الكود أولاً.");
+      if (!canvas) return alert("الرجاء انشاء الكود أولاً.");
       const name = document.getElementById("fullname").value.trim();
       const link = document.createElement("a");
       link.download = name + ".png";
